@@ -23,7 +23,6 @@ def stratified_group_k_fold(y, groups, k=5):
         return np.mean(std_per_label)
     
     groups_and_y_counts = list(y_counts_per_group.items())
-    print(len(y), len(groups_and_y_counts))
     for g, y_counts in sorted(groups_and_y_counts, key=lambda x: -np.std(x[1])):
         best_fold = None
         min_eval = None

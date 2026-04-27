@@ -1,3 +1,9 @@
+[[file:stratified_atime.R]] makes
+
+[[file:stratified_atime_kaggle.png]]
+
+[[file:stratified_atime_sim.png]]
+
 - [[https://github.com/tdhock/mlr3resampling/issues/86#issuecomment-4296787363][comment]]: data respiratory, R code.
 - [[https://github.com/scikit-learn/scikit-learn/blob/fe2edb3cd/sklearn/model_selection/_split.py#L893][sklearn code]]
 - [[https://www.kaggle.com/code/jakubwasikowski/stratified-group-k-fold-cross-validation/notebook][kaggle]]: [[file:stratified-group-k-fold-cross-validation.ipynb][notebook]], [[file:train.csv.zip][zip]], [[file:train.csv][csv]], [[file:stratified-group-k-fold-cross-validation.py][python script]].
