@@ -1,4 +1,4 @@
-remotes::install_github("tdhock/mlr3resampling@port-py")
+remotes::install_github("tdhock/mlr3resampling@3d6980138432e2b0ddf2557161378b757c490fe5")
 reticulate::use_condaenv("2023-08-deep-learning")
 library(data.table)
 library(ggplot2)
