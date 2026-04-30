@@ -12,7 +12,7 @@ RSS <- function(st, f){
   stab <- as.numeric(table(st))/folds
   sftab <- table(st, f)
   dtab <- stab-sftab
-  sum(dtab^2)
+  c(RSS=sum(dtab^2), mean.sd=mean(apply(sftab,1,sd)))
 }
 cv$instance$fold.dt[, RSS(stratum, fold)]
 train_dt[, RSS(AdoptionSpeed, fold)]
