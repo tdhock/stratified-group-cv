@@ -10,7 +10,7 @@ cv$param_set$values$folds <- folds
 cv$instantiate(train_task)
 RSS <- function(st, f){
   stab <- as.numeric(table(st))/folds
-  sftab <- table(st, f)
+  print(sftab <- table(st, f))
   dtab <- stab-sftab
   c(RSS=sum(dtab^2), mean.sd=mean(apply(sftab,1,sd)))
 }
