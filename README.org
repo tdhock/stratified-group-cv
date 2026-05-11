@@ -1,3 +1,35 @@
+** 11 May 2026
+
+[[file:data.R]] creates standard data set CSV files under data/.
+
+[[file:data_meta.R]] creates [[file:data_meta.csv]]
+
+[[file:several_Tasks_data.R]] reads data set CSV files and writes [[file:several_Tasks_data.csv]]
+
+[[file:several_Tasks.R]] reads that and makes figures:
+
+[[file:several_Tasks_wrap.png]]
+
+[[file:several_Tasks_sd.png]]
+
+[[file:several_Tasks.png]]
+
+[[file:several_Tasks_respiratory.png]]
+
+We see that neither Wasikowski nor RSS is always the best, but both are generally much better than random.
+Interestingly
+
+- in AZtrees there are a few very large groups, so best RSS is very large for more than 3 folds.
+- generally the evaluation metrics are consistent but in respiratory, that is not always the case:
+  - for 7 folds, RSS is slightly better in both evaluation metrics. (consistent)
+  - for 8 folds, Wasikowski is slightly better in both evaluation metrics. (consistent)
+  - for 9 folds, Wasikowski has better mean.sd but RSS has better RSS. (inconsistent)
+  - for 2 and 6 folds, one evaluation metric says algos are same, other says one is better. (inconsistent)
+
+** previous
+
+[[file:opt.R]] is a proof-of-concept for RSS minimization.
+
 [[file:stratified_atime_data.R]] makes [[file:stratified_atime.RData]]
 
 [[file:stratified_atime.R]] makes
