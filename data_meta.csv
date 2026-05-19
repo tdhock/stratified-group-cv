@@ -1,0 +1,5 @@
+data.name,strata,rows,groups,min.rows.per.group,max.rows.per.group
+AZtrees,2,5956,189,1,1478
+PetAdoption,5,14993,5595,1,459
+five,2,12,5,1,4
+respiratory,2,444,111,4,4
