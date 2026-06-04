@@ -1,6 +1,6 @@
 library(data.table)
 library(ggplot2)
-afac <- function(a)factor(a, c("Wasikowski", "RSS"))
+afac <- function(a)factor(a, c("WasikowskiLimitedMemory", "RSS"))
 several_Tasks <- fread("several_Tasks_data.csv")[, let(
   Data = data.name,
   Algo = afac(algo),
@@ -18,9 +18,9 @@ gg <- ggplot()+
     labeller=label_both,
     ncol=length(unique(several_Tasks$folds)))+
   scale_x_log10()
-png("several_Tasks_wrap.png", width=20, height=6, units="in", res=200)
+## png("several_Tasks_wrap.png", width=20, height=6, units="in", res=200)
 print(gg)
-dev.off()
+## dev.off()
 
 gg <- ggplot()+
   geom_point(aes(
@@ -40,8 +40,8 @@ several_Tasks[Data=="respiratory" & folds==9]
 
 clong <- melt(several_Tasks[algo!="random"], measure.vars=c("RSS", "mean.sd"))
 (cwide <- dcast(clong, Data+folds+variable~algo, mean)[, let(
-  diff=RSS-Wasikowski,
-  lr = log10(RSS/Wasikowski)
+  diff=RSS-WasikowskiLimitedMemory,
+  lr = log10(RSS/WasikowskiLimitedMemory)
 )][])
 (wider <- dcast(cwide, Data+folds~variable, value.var="lr"))
 wider[sign(RSS)!=sign(mean.sd)]
