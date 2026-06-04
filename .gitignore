@@ -2,3 +2,6 @@
 /__pycache__/
 *.csv
 *.zip
+*.aux
+*.log
+/.Rhistory

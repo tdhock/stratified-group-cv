@@ -13,5 +13,5 @@ meta.dt <- all_dt[, {
     groups=length(gtab),
     min.rows.per.group=min(gtab),
     max.rows.per.group=max(gtab))
-}, by=data.name]
+}, by=data.name][order(rows)]
 fwrite(meta.dt, "data_meta.csv")

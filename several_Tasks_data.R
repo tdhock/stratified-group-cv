@@ -1,6 +1,7 @@
 library(data.table)
 RSS <- function(st, f){
   stab <- as.numeric(table(st))/folds
+  cat(sprintf("folds=%d seed=%d algo=%s\n", folds, seed, algo))
   print(sftab <- table(st, f))
   dtab <- stab-sftab
   c(RSS=sum(dtab^2), mean.sd=mean(apply(sftab,1,sd)), zeros=sum(sftab==0))
@@ -14,7 +15,7 @@ for(data.i in seq_along(data.csv.vec)){
   train_task <- mlr3::as_task_classif(task_dt, target="target")
   train_task$col_roles$stratum <- "target"
   train_task$col_roles$group <- "groupID"
-  for(folds in 2:10)for(seed in 1:10)for(algo in c("random", "RSS","Wasikowski")){
+  for(folds in 2:10)for(seed in 1:10)for(algo in c("random", "RSS","WasikowskiLimitedMemory")){
     set.seed(seed)
     fold.dt <- if(algo=="random"){
       unique(task_dt[, .(

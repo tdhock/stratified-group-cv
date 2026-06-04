@@ -1,5 +1,5 @@
 library(data.table)
-train_dt <- fread("train.csv")
+train_dt <- fread("train.csv") #from https://www.kaggle.com/code/jakubwasikowski/stratified-group-k-fold-cross-validation/notebook
 
 five <- rbind(
   data.table(g="f1g1", y=c(1,2,2,2)),
@@ -15,11 +15,17 @@ data(respiratory, package="geepack")
 
 data(AZtrees, package="mlr3resampling")
 
+if(!file.exists("Laribi2024full.csv")){
+  download.file("https://zenodo.org/records/12954673/files/dataset.csv?download=1", "Laribi2024full.csv")
+}
+Laribi <- fread("Laribi2024full.csv")
+
 DataSet <- function(dt, yname, gname){
   ifac <- function(x)as.integer(factor(x))
   data.table(dt)[, .(target=ifac(get(yname)), groupID=ifac(get(gname)))]
 }
 data.list <- list(
+  Laribi2024=DataSet(Laribi, "oym", "patient_id"),
   PetAdoption=DataSet(train_dt, "AdoptionSpeed", "RescuerID"),
   five=DataSet(five, "y", "g"),
   respiratory=DataSet(resp_dt, "outcome", "person"),
