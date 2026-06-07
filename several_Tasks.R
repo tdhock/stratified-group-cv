@@ -1,11 +1,21 @@
 library(data.table)
 library(ggplot2)
-afac <- function(a)factor(a, c("WasikowskiLimitedMemory", "RSS"))
-several_Tasks <- fread("several_Tasks_data.csv")[, let(
+comma <- function(x)data.table(x, chr=format(x, big.mark=",", scientific=FALSE, trim=TRUE))[, factor(chr, unique(chr[order(x)]))]
+meta.dt <- fread("data_meta.csv")[, let(
+  "Rows/Group" = ifelse(
+    min.rows.per.group==max.rows.per.group, min.rows.per.group,
+    sprintf("%s–%s", min.rows.per.group, comma(max.rows.per.group))),
+  Rows = comma(rows),
+  Groups = comma(groups)
+)]
+afac <- function(a)factor(a, c("Wasikowski", "RSS"))
+several_Tasks_raw <- fread("several_Tasks_data.csv")[, let(
   Data = data.name,
   Algo = afac(algo),
   Folds = factor(paste0("\n", folds), unique(paste0("\n", folds)))
 )]
+several_Tasks <- several_Tasks_raw[meta.dt, on="data.name"]
+several_Tasks[, table(data.name, algo, useNA="always")]
 gg <- ggplot()+
   theme(axis.text.x=element_text(angle=30, hjust=1))+
   geom_point(aes(
@@ -22,26 +32,13 @@ gg <- ggplot()+
 print(gg)
 ## dev.off()
 
-gg <- ggplot()+
-  geom_point(aes(
-    mean.sd, algo),
-    shape=1,
-    data=several_Tasks[Data != "five"])+
-  facet_grid(
-    Folds ~ Data,
-    scales="free",
-    labeller=label_both)+
-  scale_x_log10()
-png("several_Tasks_sd.png", width=10, height=5, units="in", res=200)
-print(gg)
-dev.off()
 
 several_Tasks[Data=="respiratory" & folds==9]
 
 clong <- melt(several_Tasks[algo!="random"], measure.vars=c("RSS", "mean.sd"))
 (cwide <- dcast(clong, Data+folds+variable~algo, mean)[, let(
-  diff=RSS-WasikowskiLimitedMemory,
-  lr = log10(RSS/WasikowskiLimitedMemory)
+  diff=RSS-Wasikowski,
+  lr = log10(RSS/Wasikowski)
 )][])
 (wider <- dcast(cwide, Data+folds~variable, value.var="lr"))
 wider[sign(RSS)!=sign(mean.sd)]
@@ -72,7 +69,33 @@ png("several_Tasks_respiratory.png", width=10, height=5, units="in", res=200)
 print(gg)
 dev.off()
 
+gg <- ggplot()+
+  geom_point(aes(
+    mean.sd, algo),
+    shape=1,
+    data=several_Tasks[Data != "five"])+
+  facet_grid(
+    Folds ~ Rows + Groups + `Rows/Group` + strata + Data,
+    scales="free",
+    labeller=label_both)+
+  scale_x_log10("Mean(SD) for 10 random group orderings")
+png("several_Tasks_sd.png", width=10, height=6, units="in", res=200)
+print(gg)
+dev.off()
 
+gg <- ggplot()+
+  geom_point(aes(
+    RMSE, algo),
+    shape=1,
+    data=several_Tasks[Data != "five"])+
+  facet_grid(
+    Folds ~ Rows + Groups + `Rows/Group` + strata + Data,
+    scales="free",
+    labeller=label_both)+
+  scale_x_log10("RMSE = Root Mean Squared Error for 10 random group orderings")
+png("several_Tasks_RMSE.png", width=10, height=6, units="in", res=200)
+print(gg)
+dev.off()
 
 gg <- ggplot()+
   geom_point(aes(
@@ -80,11 +103,11 @@ gg <- ggplot()+
     shape=1,
     data=several_Tasks[Data != "five"])+
   facet_grid(
-    Folds ~ Data,
+    Folds ~ Rows + Groups + `Rows/Group` + strata + Data,
     scales="free",
     labeller=label_both)+
-  scale_x_log10()
-png("several_Tasks.png", width=10, height=5, units="in", res=200)
+  scale_x_log10("RSS = Residual Sum of Squares for 10 random group orderings")
+png("several_Tasks.png", width=10, height=6, units="in", res=200)
 print(gg)
 dev.off()
 
