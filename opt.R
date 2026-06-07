@@ -31,20 +31,27 @@ getdt <- function(gt){
       rss.dt.list[[paste(group, fold)]] <- data.table(
         group, fold,
         getrss=getrss(to.add+nhat),
+        crit=sum(gvec*nhat[,fold]),
+        orig=RSS+sum(2*nhat[,fold]*gvec + gvec^2 - 2*nstar*gvec),
         update=RSS+sum(((nhat[,fold]-nstar)*2+gvec)*gvec))
     }
   }
   rbindlist(rss.dt.list)
 }
+all.rss.dt.list <- list()
 for(iteration in 1:nrow(gtab)){
-  (rss.dt <- getdt(curr.gtab))
-  chosen <- rss.dt[which.min(update)][, gname := rownames(curr.gtab)[group] ]
+  (rss.dt <- getdt(curr.gtab)[, is.min := crit==min(crit)])
+  ch.i <- which.min(rss.dt$update)
+  rss.dt[ch.i, chosen := TRUE]
+  all.rss.dt.list[[iteration]] <- data.table(iteration, rss.dt)
+  chosen <- rss.dt[ch.i][, gname := rownames(curr.gtab)[group] ]
   nhat[,chosen$fold] <- nhat[,chosen$fold]+curr.gtab[chosen$group,]
   RSS <- chosen$update
   it.dt.list[[iteration]] <- data.table(iteration, chosen)
   iteration <- iteration+1
   curr.gtab <- curr.gtab[-chosen$group,,drop=FALSE]
 }
+all.rss.dt <- rbindlist(all.rss.dt.list)
 (it.dt <- rbindlist(it.dt.list))
 
 ## searches only folds at each iteration (linear time).
