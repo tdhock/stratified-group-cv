@@ -9,9 +9,9 @@ In classification data sets, stratification is used to ensure that splits preser
 In structured data (image segmentation, medical visits, etc.), grouping is used to prevent data leakage (data from the same group should not appear in both train and test sets).
 Fold assignment is trivial with either stratification or grouping, but it is NP-hard with both stratification and grouping.
 This is an instance of the multidimensional multi-way number partitioning problem, which has been called the “easiest hard problem” [Hayes, 2002].
-A previous heuristic in scikit-learn assigns by minimizing variance between folds, but is quadratic time.
-We propose a new heuristic assignment that minimizes squared error between ideal and actual counts per fold and stratum.
-We 
+The previous quadratic time heuristic of Wasikowski (sklearn.model_selection.StratifiedGroupKFold) obtains reasonable fold assignments by minimizing variance between folds.
+We propose a new linear time heuristic assignment that minimizes squared error between ideal and actual counts per fold and stratum.
+In an empirical analysis of 4 data sets, the proposed algorithm provides reasonable fold assignments, and is ~10x faster than the previous algorithm.
 
 ** 3 June 2026
 
