@@ -1,3 +1,11 @@
+** Slides for presentation
+
+[[https://docs.google.com/presentation/d/1gXEqaPQBdJxA39iLqy6SlpA1LZGHcOOgJ1dT1_lzVlo/edit?usp=sharing][Google slides]]
+
+Title: Efficient cross-validation with groups in multiple strata
+
+Abstract: 
+
 ** 3 June 2026
 
 Added code in [[file:data.R]]  to download [[file:Laribi2024full.csv]] from https://zenodo.org/records/12954673
