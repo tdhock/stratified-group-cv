@@ -1,20 +1,20 @@
 library(data.table)
 library(ggplot2)
-comma <- function(x)data.table(x, chr=format(x, big.mark=",", scientific=FALSE, trim=TRUE))[, factor(chr, unique(chr[order(x)]))]
-meta.dt <- fread("data_meta.csv")[, let(
-  "Rows/Group" = ifelse(
-    min.rows.per.group==max.rows.per.group, min.rows.per.group,
-    sprintf("%s–%s", min.rows.per.group, comma(max.rows.per.group))),
-  Rows = comma(rows),
-  Groups = comma(groups)
-)]
+algo.dt <- rowwiseDT(
+  algo=, algo.disp=,
+  "RSS", "RSS (proposed)",
+  "Wasikowski", "Wasikowski (previous)",
+  "origami", "origami (previous)",
+  "random", "random"
+)[, Algorithm := factor(algo.disp, rev(algo.disp))][]
 afac <- function(a)factor(a, c("Wasikowski", "RSS"))
 several_Tasks_raw <- fread("several_Tasks_data.csv")[, let(
   Data = data.name,
   Algo = afac(algo),
   Folds = factor(paste0("\n", folds), unique(paste0("\n", folds)))
 )]
-several_Tasks <- several_Tasks_raw[meta.dt, on="data.name"][, correct := bad.groups==0][]
+meta.dt <- fread("data_meta.csv")
+several_Tasks <- several_Tasks_raw[meta.dt, on="data.name"][, leakage := bad.groups>0][algo.dt, on = "algo"]
 several_Tasks[, table(data.name, algo, useNA="always")]
 gg <- ggplot()+
   theme(axis.text.x=element_text(angle=30, hjust=1))+
@@ -71,49 +71,72 @@ dev.off()
 
 gg <- ggplot()+
   geom_point(aes(
-    mean.sd, algo),
+    mean.sd, Algorithm),
     shape=1,
     data=several_Tasks[Data != "five"])+
   facet_grid(
-    Folds ~ Rows + Groups + `Rows/Group` + strata + Data,
+    Folds ~ Rows + Groups + `Rows/Group` + strata + `Strata/Group` + Data,
     scales="free",
     labeller=label_both)+
-  scale_x_log10("Mean(SD) for 10 random group orderings")
+  scale_x_log10("Mean(SD) for 10 random group orderings (for ties)")
 png("several_Tasks_sd.png", width=10, height=6, units="in", res=200)
 print(gg)
 dev.off()
 
 gg <- ggplot()+
   geom_point(aes(
-    RMSE, algo),
+    RMSE, Algorithm),
     shape=1,
     data=several_Tasks[Data != "five"])+
   facet_grid(
-    Folds ~ Rows + Groups + `Rows/Group` + strata + Data,
+    Folds ~ Rows + Groups + `Rows/Group` + strata + `Strata/Group` +Data,
     scales="free",
     labeller=label_both)+
-  scale_x_log10("RMSE = Root Mean Squared Error for 10 random group orderings")
+  scale_x_log10("RMSE = Root Mean Squared Error for 10 random group orderings (for ties)")
 png("several_Tasks_RMSE.png", width=10, height=6, units="in", res=200)
 print(gg)
 dev.off()
 
 gg <- ggplot()+
   geom_point(aes(
-    RSS, algo, color=correct),
+    RSS, Algorithm, color=leakage),
     shape=1,
-    data=several_Tasks[Data != "five"])+
+    data=several_Tasks[Data != "five" & is.finite(RSS)])+
   scale_color_manual(
-    "one fold\nper group",
+    "Data leakage",
     values=c(
-    "TRUE"="black",
-    "FALSE"="deepskyblue"))+
+    "TRUE"="deepskyblue",
+    "FALSE"="black"))+
   facet_grid(
-    Folds ~ Rows + Groups + `Rows/Group` + strata + Data,
+    Folds ~ Rows + Groups + `Rows/Group` + strata + `Strata/Group` +Data,
     scales="free",
     labeller=label_both)+
-  scale_x_log10("RSS = Residual Sum of Squares for 10 random group orderings")+
+  scale_x_log10("RSS = Residual Sum of Squares for 10 random group orderings (for ties)")+
   theme(legend.position=c(0.31, 0.15))
-png("several_Tasks.png", width=10, height=6, units="in", res=200)
+png("several_Tasks.png", width=12, height=6.5, units="in", res=200)
+print(gg)
+dev.off()
+
+
+gg <- ggplot()+
+  geom_point(aes(
+    RMSE, Algorithm, color=leakage),
+    shape=1,
+    data=several_Tasks[Data != "five" & is.finite(RSS) & (folds %% 2)==0])+
+  scale_color_manual(
+    "Data leakage",
+    values=c(
+    "TRUE"="red",
+    "FALSE"="black"))+
+  facet_grid(
+    Folds ~ Rows + Groups + `Rows/Group` + strata + `Strata/Group` +Data,
+    scales="free",
+    labeller=label_both)+
+  scale_x_log10("Root Mean Squared Error (RMSE) for 10 random group orderings (for ties)")+
+  theme(
+    legend.position=c(0.3, 0.15),
+    legend.background=element_rect(fill="#ffffffcc"))
+png("several_Tasks_even.png", width=8, height=4.5, units="in", res=200)
 print(gg)
 dev.off()
 

@@ -23,7 +23,8 @@ ares <- atime::atime(
     N.folds <- N
     dt <- Laribi
   },
-  seconds.limit=1,
+  seconds.limit=10,
+  times=10,
   expr.list=expr.list)
 plot(ares)
 

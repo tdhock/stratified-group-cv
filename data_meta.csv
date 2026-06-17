@@ -1,6 +1,6 @@
-data.name,strata,rows,groups,min.rows.per.group,max.rows.per.group
-five,2,12,5,1,4
-respiratory,2,444,111,4,4
-AZtrees,2,5956,189,1,1478
-PetAdoption,5,14993,5595,1,459
-Laribi2024,2,248485,123646,1,30
+data.name,strata,rows,groups,min.strata.per.group,max.strata.per.group,min.rows.per.group,max.rows.per.group,Rows,Groups,Rows/Group,Strata/Group
+Laribi2024,2,248485,123646,1,2,1,30,"248,485","123,646",1–30,1–2
+PetAdoption,5,14993,5595,1,5,1,459,"14,993","5,595",1–459,1–5
+AZtrees,2,5956,189,1,1,1,1478,"5,956",189,"1–1,478",1
+respiratory,2,444,111,1,2,4,4,444,111,4,1–2
+five,2,12,5,1,2,1,4,12,5,1–4,1–2
