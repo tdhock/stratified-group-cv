@@ -56,7 +56,6 @@ for(data.i in seq_along(data.csv.vec)){
       folds=.N
     ), by=groupID][folds>1]
     rows.per.group.fold[bad.dt, on="groupID"]
-    if(nrow(bad.dt))stop(15)
     result.dt.list[[paste(
       data.name, folds, seed, algo
     )]] <- fold.dt[, data.table(
