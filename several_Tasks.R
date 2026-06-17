@@ -14,7 +14,7 @@ several_Tasks_raw <- fread("several_Tasks_data.csv")[, let(
   Algo = afac(algo),
   Folds = factor(paste0("\n", folds), unique(paste0("\n", folds)))
 )]
-several_Tasks <- several_Tasks_raw[meta.dt, on="data.name"]
+several_Tasks <- several_Tasks_raw[meta.dt, on="data.name"][, correct := bad.groups==0][]
 several_Tasks[, table(data.name, algo, useNA="always")]
 gg <- ggplot()+
   theme(axis.text.x=element_text(angle=30, hjust=1))+
@@ -99,14 +99,20 @@ dev.off()
 
 gg <- ggplot()+
   geom_point(aes(
-    RSS, algo),
+    RSS, algo, color=correct),
     shape=1,
     data=several_Tasks[Data != "five"])+
+  scale_color_manual(
+    "one fold\nper group",
+    values=c(
+    "TRUE"="black",
+    "FALSE"="deepskyblue"))+
   facet_grid(
     Folds ~ Rows + Groups + `Rows/Group` + strata + Data,
     scales="free",
     labeller=label_both)+
-  scale_x_log10("RSS = Residual Sum of Squares for 10 random group orderings")
+  scale_x_log10("RSS = Residual Sum of Squares for 10 random group orderings")+
+  theme(legend.position=c(0.31, 0.15))
 png("several_Tasks.png", width=10, height=6, units="in", res=200)
 print(gg)
 dev.off()
