@@ -26,38 +26,75 @@ for(data.i in seq_along(data.csv.vec)){
       , fold := sample(rep(1:folds, length.out=.N))
       ][task_dt, on="groupID"]
     }else if(algo=="origami"){
-      tryCatch({
+      mult.dt <- task_dt[, .(
+        rows=.N
+      ), by=.(groupID,target)][, .(
+        targets=.N
+      ), by=groupID][targets>1]
+      if(nrow(mult.dt)){
+        data.table(fold=NA_integer_, task_dt)
+      }else{
         fold_list <- with(task_dt, origami::make_folds(
           cluster_ids=groupID,
           strata_ids=target,
           V=folds
         ))
-        data.table(fold=seq_along(fold_list))[
-        , .(row=fold_list[[fold]]$valid)
-        , by=fold][order(row), data.table(fold, task_dt)]
-      }, error=function(e){
-        data.table(fold=NA_integer_, task_dt)
-      })
+        data.table(fold=seq_along(fold_list))[, {
+          task_row <- fold_list[[fold]]$valid
+          data.table(task_row, task_dt[task_row])
+        }, by=fold]
+      }
     }else{
       cv <- mlr3resampling::ResamplingSameOtherSizesCV$new()
       cv$param_set$values$folds <- folds
       cv$param_set$values$group_stratum_algo <- algo
       cv$instantiate(train_task)
-      cv$instance$fold.dt
+      cv$instance$fold.dt[, .(groupID=group, target, fold)]
     }
+    rows.per.group.fold <- fold.dt[, .(rows=.N), by=.(groupID,fold)]
+    bad.dt <- rows.per.group.fold[, .(
+      folds=.N
+    ), by=groupID][folds>1]
+    rows.per.group.fold[bad.dt, on="groupID"]
+    if(nrow(bad.dt))stop(15)
     result.dt.list[[paste(
       data.name, folds, seed, algo
     )]] <- fold.dt[, data.table(
       data.name, folds, seed, algo,
+      bad.groups=nrow(bad.dt),
       t(RSS(target, fold))
     )]
   }
 }
 
 (result.dt <- rbindlist(result.dt.list))
+result.dt[algo=="origami" & !is.na(RSS)]
+result.dt[, table(paste(algo, data.name), bad.groups)]
 fwrite(result.dt, "several_Tasks_data.csv")
 result.dt[data.name=="respiratory" & folds==5]
 result.dt[data.name=="PetAdoption" & folds==10]
 result.dt[data.name=="five" & folds==4]
 result.dt[data.name=="five" & folds==3]
 result.dt[data.name=="five" & folds==2]
+
+if(FALSE){#for https://github.com/tlverse/origami/issues/65
+  set.seed(3)
+  library(data.table)
+  task_dt <- fread("https://raw.githubusercontent.com/tdhock/stratified-group-cv/refs/heads/main/data/AZtrees.csv")
+  fold_list <- with(task_dt, origami::make_folds(
+    cluster_ids=groupID,
+    strata_ids=target,
+    V=2
+  ))
+  fold.dt <- data.table(fold=seq_along(fold_list))[, {
+    task_row <- fold_list[[fold]]$valid
+    data.table(task_row, task_dt[task_row])
+  }, by=fold]
+  rows.per.group.fold <- fold.dt[, .(rows=.N), by=.(groupID,fold)]
+  bad.dt <- rows.per.group.fold[, .(
+    folds=.N
+  ), by=groupID][folds>1]
+  rows.per.group.fold[bad.dt, on="groupID"]
+  sessionInfo()
+  print(fold.dt[bad.dt, on="groupID"][order(task_row)], nrow=200)
+}
