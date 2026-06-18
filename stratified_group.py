@@ -1,6 +1,11 @@
 import numpy as np
 import pandas as pd
 from collections import Counter, defaultdict
+from sklearn.model_selection import StratifiedGroupKFold
+sgkf = StratifiedGroupKFold()
+
+def for_split(y, groups):
+    return [info for info in enumerate(sgkf.split(y, y, groups))]
 
 def stratified_group_k_fold(y, groups, k=5):
     labels_num = np.max(y) + 1
@@ -36,9 +41,9 @@ def stratified_group_k_fold(y, groups, k=5):
     return groups_per_fold
 
 
-train_df = pd.read_csv('train.csv')
-train_y = train_df.AdoptionSpeed.values
-groups = train_df.RescuerID.values
+train_df = pd.read_csv('data/Laribi2024.csv')
+train_y = train_df.target.values
+groups = train_df.groupID.values
 out = stratified_group_k_fold(train_y, groups)
 
 N = 29000
@@ -52,3 +57,4 @@ def getargs(N):
 Nargs = getargs(N)
 [len(j) for j in Nargs]
 out = stratified_group_k_fold(*Nargs)
+

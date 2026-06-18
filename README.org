@@ -60,10 +60,14 @@ Interestingly
 
 [[file:stratified_atime.R]] makes
 
-[[file:stratified_atime_kaggle.png]]
+[[file:stratified_atime.png]]
 
-[[file:stratified_atime_sim.png]]
-
+- all algorithms are linear in number of rows N.
+- overhead of calling Python from R is negligible, 1e-4 sec.
+- Python takes almost a minute to do fold assignment for full Laribi2024 data (sklearn same as Kaggle).
+- R+cpp RSS (more complex sort) is slightly slower than R+cpp Wasikowski.
+- R+cpp sort+assign (only) is slightly faster than R+cpp Wasikowski (calling full instantiate method).
+- cpp assign is much faster than R+cpp sort+assign, which means the sort is the slow part.
 - [[https://github.com/tdhock/mlr3resampling/issues/86#issuecomment-4296787363][comment]]: data respiratory, R code.
 - [[https://github.com/scikit-learn/scikit-learn/blob/fe2edb3cd/sklearn/model_selection/_split.py#L893][sklearn code]]
 - [[https://www.kaggle.com/code/jakubwasikowski/stratified-group-k-fold-cross-validation/notebook][kaggle]]: [[file:stratified-group-k-fold-cross-validation.ipynb][notebook]], [[file:train.csv.zip][zip]], [[file:train.csv][csv]], [[file:stratified-group-k-fold-cross-validation.py][python script]].

@@ -1,48 +1,64 @@
-remotes::install_github("tdhock/mlr3resampling@3d6980138432e2b0ddf2557161378b757c490fe5")
-reticulate::use_condaenv("2023-08-deep-learning")
+remotes::install_github("tdhock/mlr3resampling")
+reticulate::conda_list()
+reticulate::use_condaenv("torch-aum")
 library(data.table)
 library(ggplot2)
-train_dt <- fread("train.csv")[order(RescuerID)]
+train_dt <- fread("data/Laribi2024.csv")
 train_dt[1]
-reticulate::py_run_string("from stratified_group import stratified_group_k_fold")
+reticulate::py_run_string("from stratified_group import stratified_group_k_fold, for_split")
 main <- reticulate::import_main()
+
 
 zfac <- function(x)as.integer(factor(x))-1L
 main$nfolds <- nfolds <- 5L
+cv <- mlr3resampling::ResamplingSameOtherSizesCV$new()
+cv$param_set$values$folds <- nfolds
+(Nvec=unique(as.integer(10^seq(1, log10(nrow(train_dt)), length.out=20))))
 alist <- atime::atime(
-  N=10^seq(1, 6, by=0.2),
+  N=Nvec,
+  times=10,
+  seconds.limit=Inf,
   setup={
     Ndt <- train_dt[(seq(1, N)-1L) %% .N + 1L][, let(
-      group = zfac(RescuerID),
-      stratum=zfac(AdoptionSpeed)
-    )]
-    main$Ndf <- Ndt
-  },
-  seconds.limit=0.1,
-  cpp=mlr3resampling:::stratified_group_cv_interface(Ndt$stratum, Ndt$group, nfolds),
-  py=reticulate::py_run_string("stratified_group_k_fold(Ndf.stratum.values, Ndf.group.values, nfolds)"),
-  None=reticulate::py_run_string("None"))
-
-set.seed(123)
-n = 1e7
-sim_dt <- data.table(
-  PID = sample(seq(1, n/10), n, replace = TRUE),   # ID for Grouping
-  target = ifelse(rbinom(n, size = 1, prob = 0.2) == 1, "A", "B")
-)[order(PID)]
-alist.sim <- atime::atime(
-  N=10^seq(1, 7, by=0.2),
-  setup={
-    Ndt <- sim_dt[(seq(1, N)-1L) %% .N + 1L][, let(
-      group = zfac(PID),
+      group = zfac(groupID),
       stratum=zfac(target)
     )]
+    Ntask = mlr3::as_task_classif(Ndt, target="target")
+    Ntask$col_roles$stratum = "target"
+    Ntask$col_roles$group = "groupID"
     main$Ndf <- Ndt
+    set.seed(1)
+    Ndt[, let(
+      random_order = sample(.N),
+      stratum_fac = factor(stratum)
+    )]
   },
-  seconds.limit=0.1,
-  cpp=mlr3resampling:::stratified_group_cv_interface(Ndt$stratum, Ndt$group, nfolds),
-  py=reticulate::py_run_string("stratified_group_k_fold(Ndf.stratum.values, Ndf.group.values, nfolds)"),
-  None=reticulate::py_run_string("None"))
+  verbose=TRUE,
+  "R+cpp Wasikowski"={
+    cv$param_set$values$group_stratum_algo <- "Wasikowski"
+    cv$instantiate(Ntask)
+  },
+  "R+cpp RSS"={
+    cv$param_set$values$group_stratum_algo <- "RSS"
+    cv$instantiate(Ntask)
+  },
+  "R+cpp sort+assign"={
+    Ndt[, let(
+      neg_sd = -sd(table(stratum_fac)),
+      g_ord = min(random_order)
+    ), by=group][
+      order(neg_sd, g_ord), 
+      mlr3resampling:::stratified_group_cv_Wasikowski_interface(
+        stratum, cumsum(c(FALSE, diff(g_ord)!=0)), nfolds
+      )+1L]
+  },
+  "cpp assign RSS"=mlr3resampling:::stratified_group_cv_RSS_interface(Ndt$stratum, Ndt$group, nfolds),
+  "cpp assign Wasikowski"=mlr3resampling:::stratified_group_cv_Wasikowski_interface(Ndt$stratum, Ndt$group, nfolds),
+  "Python full Kaggle"=reticulate::py_run_string("stratified_group_k_fold(Ndf.stratum.values, Ndf.group.values, nfolds)"),
+  "Python full sklearn"=reticulate::py_run_string("for_split(Ndf.stratum.values, Ndf.group.values)"),
+  "Python overhead"=reticulate::py_run_string("None"))
+plot(alist)
 
 ntrain <- nrow(train_dt)
-save(alist, alist.sim, ntrain, file="stratified_atime.RData")
+save(alist, ntrain, file="stratified_atime.RData")
 

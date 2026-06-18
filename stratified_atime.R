@@ -4,45 +4,27 @@ requireNamespace("atime")
 alist$unit.col.vec <- c(seconds="median")
 plot(alist)
 
-arefs <- atime::references_best(alist)
-plot(arefs)
-
-apred <- predict(arefs, seconds=0.01)
-overhead <- geom_text(aes(
-  x=Inf, y=5e-5, label="R-Python overhead<1ms"),
-  hjust=1)
-xlog <- scale_x_log10("N = number of rows input to fold generation function")
-ylog <- scale_y_log10("Time to compute folds with group+strata constraint\nmedian line, min/max band")
-(gg <- plot(apred)+
-   geom_vline(color="grey",xintercept=ntrain)+
-   ggtitle("Kaggle pet adoption data, 5-fold CV with group+strata constraint")+
-   overhead+
-   facet_null()+
-   ylog+
-   geom_text(aes(
-     x=ntrain, y=0,
-     label=sprintf("rows in CSV=%d", ntrain)),
-     hjust=1, vjust=-0.5, color="grey50")+
-   xlog)
-
-png("stratified_atime_kaggle.png", width=6, height=6, units="in", res=200)
-print(gg)
-dev.off()
-
-plot(alist.sim)
-
-arefs.sim <- atime::references_best(alist.sim)
-plot(arefs.sim)
-
-apred.sim <- predict(arefs.sim)
-(gg <- plot(apred.sim)+
-   ggtitle("Simulated data, 5-fold CV with group+strata constraint")+
-   overhead+
-   facet_null()+
-   ylog+
-   xlog+
-   overhead)
-
-png("stratified_atime_sim.png", width=6, height=6, units="in", res=200)
-print(gg)
+myround <- function(x){
+  f=10^-floor(log10(x)-1)
+  round(f*x)/f
+}
+gg <- ggplot()+
+  geom_line(aes(
+    N, median, color=label),
+    size=1,
+    data=alist$measurements[
+    , label := paste(expr.name, format(myround(median[N==max(N)])), "sec.")
+    , by=expr.name])+
+  scale_x_log10(
+    "N = Number of data rows",
+    breaks=c(10^seq(1, 5), ntrain),
+    limits=c(10, 1e8))+
+  scale_y_log10(
+    "Computation time (seconds)\n5-fold CV in Laribi2024 data",
+    breaks=10^seq(-5, 5))+
+  theme_bw()+
+  theme(axis.text.x=element_text(angle=30, hjust=1))
+(dl <- directlabels::direct.label(gg, list(cex=0.7, "right.polygons")))
+png("stratified_atime.png", width=5, height=3, units="in", res=200)
+print(dl)
 dev.off()
