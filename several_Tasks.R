@@ -4,6 +4,7 @@ algo.dt <- rowwiseDT(
   algo=, algo.disp=,
   "RSS", "RSS (proposed)",
   "Wasikowski", "Wasikowski (previous)",
+  "rsample", "rsample (previous)",
   "origami", "origami (previous)",
   "random", "random"
 )[, Algorithm := factor(algo.disp, rev(algo.disp))][]
@@ -13,7 +14,7 @@ several_Tasks_raw <- fread("several_Tasks_data.csv")[, let(
   Algo = afac(algo),
   Folds = factor(paste0("\n", folds), unique(paste0("\n", folds)))
 )]
-meta.dt <- fread("data_meta.csv")
+meta.dt <- fread("data_meta.csv")[order(rows)][, Rows := factor(Rows, Rows)][]
 several_Tasks <- several_Tasks_raw[meta.dt, on="data.name"][, leakage := bad.groups>0][algo.dt, on = "algo"]
 several_Tasks[, table(data.name, algo, useNA="always")]
 gg <- ggplot()+
@@ -116,7 +117,6 @@ gg <- ggplot()+
 png("several_Tasks.png", width=12, height=6.5, units="in", res=200)
 print(gg)
 dev.off()
-
 
 gg <- ggplot()+
   geom_point(aes(

@@ -17,20 +17,36 @@ for(data.i in seq_along(data.csv.vec)){
   train_task <- mlr3::as_task_classif(task_dt, target="target")
   train_task$col_roles$stratum <- "target"
   train_task$col_roles$group <- "groupID"
-  for(folds in 2:10)for(seed in 1:10)for(algo in c("random", "RSS", "Wasikowski", "origami")){
+  for(folds in 2:10)for(seed in 1:10)for(algo in c("random", "RSS", "Wasikowski", "origami", "rsample")){
     set.seed(seed)
+    mult.dt <- task_dt[, .(
+      rows=.N
+    ), by=.(groupID,target)][, .(
+      targets=.N
+    ), by=groupID][targets>1]
     fold.dt <- if(algo=="random"){
       unique(task_dt[, .(
         groupID
       )])[
       , fold := sample(rep(1:folds, length.out=.N))
       ][task_dt, on="groupID"]
+    }else if(algo=="rsample"){
+      if(nrow(mult.dt)){
+        data.table(fold=NA_integer_, task_dt)
+      }else{
+        rtib <- rsample::group_vfold_cv(
+          task_dt,
+          group="groupID",
+          v=folds,
+          strata="target",
+          balance="observations")#or groups
+        as.data.table(rtib)[, {
+          S <- splits[[1]]
+          row.ids <- setdiff(1:nrow(task_dt), S$in_id)
+          data.table(fold=.I, task_dt[row.ids])
+        }, by=id]
+      }
     }else if(algo=="origami"){
-      mult.dt <- task_dt[, .(
-        rows=.N
-      ), by=.(groupID,target)][, .(
-        targets=.N
-      ), by=groupID][targets>1]
       if(nrow(mult.dt)){
         data.table(fold=NA_integer_, task_dt)
       }else{
