@@ -70,6 +70,8 @@ png("several_Tasks_respiratory.png", width=10, height=5, units="in", res=200)
 print(gg)
 dev.off()
 
+height.in <- 7
+
 gg <- ggplot()+
   geom_point(aes(
     mean.sd, Algorithm),
@@ -80,7 +82,7 @@ gg <- ggplot()+
     scales="free",
     labeller=label_both)+
   scale_x_log10("Mean(SD) for 10 random group orderings (for ties)")
-png("several_Tasks_sd.png", width=10, height=6, units="in", res=200)
+png("several_Tasks_sd.png", width=10, height=height.in, units="in", res=200)
 print(gg)
 dev.off()
 
@@ -94,7 +96,7 @@ gg <- ggplot()+
     scales="free",
     labeller=label_both)+
   scale_x_log10("RMSE = Root Mean Squared Error for 10 random group orderings (for ties)")
-png("several_Tasks_RMSE.png", width=10, height=6, units="in", res=200)
+png("several_Tasks_RMSE.png", width=10, height=height.in, units="in", res=200)
 print(gg)
 dev.off()
 
@@ -114,7 +116,7 @@ gg <- ggplot()+
     labeller=label_both)+
   scale_x_log10("RSS = Residual Sum of Squares for 10 random group orderings (for ties)")+
   theme(legend.position=c(0.31, 0.15))
-png("several_Tasks.png", width=12, height=6.5, units="in", res=200)
+png("several_Tasks.png", width=12, height=7, units="in", res=200)
 print(gg)
 dev.off()
 
@@ -136,7 +138,7 @@ gg <- ggplot()+
   theme(
     legend.position=c(0.3, 0.15),
     legend.background=element_rect(fill="#ffffffcc"))
-png("several_Tasks_even.png", width=8, height=4.5, units="in", res=200)
+png("several_Tasks_even.png", width=8, height=5, units="in", res=200)
 print(gg)
 dev.off()
 
