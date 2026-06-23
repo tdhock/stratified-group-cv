@@ -222,7 +222,7 @@ gg <- ggplot()+
   scale_color_manual(
     "Data leakage",
     values=c(
-    "TRUE"="red",
+    "TRUE"="deepskyblue",
     "FALSE"="black"))+
   facet_grid(
     Folds ~ Rows + Groups + `Rows/Group` + strata + `Strata/Group` +Data,
