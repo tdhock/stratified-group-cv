@@ -5,6 +5,7 @@ algo.dt <- rowwiseDT(
   "RSS", "RSS (proposed)",
   "Wasikowski", "Wasikowski (previous)",
   "rsample", "rsample (previous)",
+  "bioLeak", "bioLeak (previous)",
   "origami", "origami (previous)",
   "random", "random"
 )[, Algorithm := factor(algo.disp, rev(algo.disp))][]
@@ -70,7 +71,7 @@ png("several_Tasks_respiratory.png", width=10, height=5, units="in", res=200)
 print(gg)
 dev.off()
 
-height.in <- 7
+height.in <- 8
 
 gg <- ggplot()+
   geom_point(aes(
@@ -115,8 +116,8 @@ gg <- ggplot()+
     scales="free",
     labeller=label_both)+
   scale_x_log10("RSS = Residual Sum of Squares for 10 random group orderings (for ties)")+
-  theme(legend.position=c(0.31, 0.15))
-png("several_Tasks.png", width=12, height=7, units="in", res=200)
+  theme(legend.position=c(0.31, 0.1))
+png("several_Tasks.png", width=12, height=height.in, units="in", res=200)
 print(gg)
 dev.off()
 
@@ -138,7 +139,8 @@ gg <- ggplot()+
   theme(
     legend.position=c(0.3, 0.15),
     legend.background=element_rect(fill="#ffffffcc"))
-png("several_Tasks_even.png", width=8, height=5, units="in", res=200)
+png("several_Tasks_even.png", width=8, height=5.5, units="in", res=200)
 print(gg)
 dev.off()
+
 

@@ -9,6 +9,12 @@ RSS <- function(st, f){
   c(RSS=sum(sq.err), RMSE=sqrt(mean(sq.err)), mean.sd=mean(apply(sftab,1,sd)), zeros=sum(sftab==0))
 }
 data.csv.vec <- Sys.glob("data/*.csv")
+list2dt <- function(fold_list, set_name){
+  data.table(fold=seq_along(fold_list))[, {
+    task_row <- fold_list[[fold]][[set_name]]
+    data.table(task_row, task_dt[task_row])
+  }, by=fold]
+}
 result.dt.list <- list()
 for(data.i in seq_along(data.csv.vec)){
   data.csv <- data.csv.vec[[data.i]]
@@ -17,7 +23,7 @@ for(data.i in seq_along(data.csv.vec)){
   train_task <- mlr3::as_task_classif(task_dt, target="target")
   train_task$col_roles$stratum <- "target"
   train_task$col_roles$group <- "groupID"
-  for(folds in 2:10)for(seed in 1:10)for(algo in c("random", "RSS", "Wasikowski", "origami", "rsample")){
+  for(folds in 2:10)for(seed in 1:10)for(algo in c("random", "RSS", "Wasikowski", "origami", "rsample","bioLeak")){
     set.seed(seed)
     mult.dt <- task_dt[, .(
       rows=.N
@@ -30,6 +36,16 @@ for(data.i in seq_along(data.csv.vec)){
       )])[
       , fold := sample(rep(1:folds, length.out=.N))
       ][task_dt, on="groupID"]
+    }else if(algo=="bioLeak"){
+      lobj <- bioLeak::make_split_plan(
+        task_dt,
+        outcome = "target",
+        mode = "subject_grouped",
+        group = "groupID",
+        v = folds,
+        stratify=TRUE,
+        seed = seed)
+      list2dt(lobj@indices, "test")
     }else if(algo=="rsample"){
       if(nrow(mult.dt)){
         data.table(fold=NA_integer_, task_dt)
@@ -40,11 +56,12 @@ for(data.i in seq_along(data.csv.vec)){
           v=folds,
           strata="target",
           balance="observations")#or groups
-        as.data.table(rtib)[, {
-          S <- splits[[1]]
-          row.ids <- setdiff(1:nrow(task_dt), S$in_id)
-          data.table(fold=.I, task_dt[row.ids])
-        }, by=id]
+        for(split_i in 1:nrow(rtib)){
+          rtib$splits[[split_i]][["out_id"]] <- setdiff(
+            1:nrow(task_dt),
+            rtib$splits[[split_i]][["in_id"]])
+        }
+        list2dt(rtib$splits, "out_id")
       }
     }else if(algo=="origami"){
       if(nrow(mult.dt)){
@@ -55,10 +72,7 @@ for(data.i in seq_along(data.csv.vec)){
           strata_ids=target,
           V=folds
         ))
-        data.table(fold=seq_along(fold_list))[, {
-          task_row <- fold_list[[fold]]$valid
-          data.table(task_row, task_dt[task_row])
-        }, by=fold]
+        list2dt(fold_list, "validation_set")
       }
     }else{
       cv <- mlr3resampling::ResamplingSameOtherSizesCV$new()
