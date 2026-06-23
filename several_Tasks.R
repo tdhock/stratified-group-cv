@@ -72,6 +72,7 @@ print(gg)
 dev.off()
 
 height.in <- 8
+width.in <- 15
 
 gg <- ggplot()+
   geom_point(aes(
@@ -83,7 +84,7 @@ gg <- ggplot()+
     scales="free",
     labeller=label_both)+
   scale_x_log10("Mean(SD) for 10 random group orderings (for ties)")
-png("several_Tasks_sd.png", width=10, height=height.in, units="in", res=200)
+png("several_Tasks_sd.png", width=width.in, height=height.in, units="in", res=200)
 print(gg)
 dev.off()
 
@@ -97,7 +98,54 @@ gg <- ggplot()+
     scales="free",
     labeller=label_both)+
   scale_x_log10("RMSE = Root Mean Squared Error for 10 random group orderings (for ties)")
-png("several_Tasks_RMSE.png", width=10, height=height.in, units="in", res=200)
+png("several_Tasks_RMSE.png", width=width.in, height=height.in, units="in", res=200)
+print(gg)
+dev.off()
+
+gg <- ggplot()+
+  ggtitle("PetAdoption data, 5-fold CV")+
+  geom_point(aes(
+    RMSE, Algorithm),
+    shape=1,
+    data=several_Tasks[Data == "PetAdoption" & folds==5])+
+  scale_x_log10("RMSE = Root Mean Squared Error\nfor 10 random group orderings (for ties)")
+png("several_Tasks_RMSE_PetAdoption_5folds.png", width=5, height=2, units="in", res=200)
+print(gg)
+dev.off()
+
+gg <- ggplot()+
+  ggtitle("AZtrees data, 3-fold CV")+
+  scale_color_manual(
+    "Data leakage",
+    values=c(
+    "TRUE"="deepskyblue",
+    "FALSE"="black"))+
+  geom_point(aes(
+    RMSE, Algorithm, color=leakage),
+    shape=1,
+    data=several_Tasks[Data == "AZtrees" & folds==3])+
+  scale_x_log10("RMSE = Root Mean Squared Error\nfor 10 random group orderings (for ties)")
+png("several_Tasks_RMSE_AZtrees_3folds.png", width=5, height=2, units="in", res=200)
+print(gg)
+dev.off()
+
+gg <- ggplot()+
+  ggtitle("AZtrees data")+
+  scale_color_manual(
+    "Data leakage",
+    values=c(
+    "TRUE"="deepskyblue",
+    "FALSE"="black"))+
+  facet_grid(
+    Folds ~ .,
+    scales="free",
+    labeller=label_both)+
+  geom_point(aes(
+    RMSE, Algorithm, color=leakage),
+    shape=1,
+    data=several_Tasks[Data == "AZtrees" & folds %in% c(3,5)])+
+  scale_x_log10("RMSE = Root Mean Squared Error\nfor 10 random group orderings (for ties)")
+png("several_Tasks_RMSE_AZtrees_5folds.png", width=5, height=3, units="in", res=200)
 print(gg)
 dev.off()
 
@@ -117,7 +165,7 @@ gg <- ggplot()+
     labeller=label_both)+
   scale_x_log10("RSS = Residual Sum of Squares for 10 random group orderings (for ties)")+
   theme(legend.position=c(0.31, 0.1))
-png("several_Tasks.png", width=12, height=height.in, units="in", res=200)
+png("several_Tasks.png", width=width.in, height=height.in, units="in", res=200)
 print(gg)
 dev.off()
 
@@ -125,7 +173,7 @@ gg <- ggplot()+
   geom_point(aes(
     RMSE, Algorithm, color=leakage),
     shape=1,
-    data=several_Tasks[Data != "five" & is.finite(RSS) & (folds %% 2)==0])+
+    data=several_Tasks[Data != "five" & is.finite(RSS) & folds %in% c(2,4,8)])+
   scale_color_manual(
     "Data leakage",
     values=c(
@@ -139,8 +187,53 @@ gg <- ggplot()+
   theme(
     legend.position=c(0.3, 0.15),
     legend.background=element_rect(fill="#ffffffcc"))
-png("several_Tasks_even.png", width=8, height=5.5, units="in", res=200)
+png("several_Tasks_even.png", width=8, height=4.5, units="in", res=200)
 print(gg)
 dev.off()
+
+
+gg <- ggplot()+
+  geom_point(aes(
+    RMSE, Algorithm, color=leakage),
+    shape=1,
+    data=several_Tasks[Data != "five" & is.finite(RSS) & folds %in% c(3,5)])+
+  scale_color_manual(
+    "Data leakage",
+    values=c(
+    "TRUE"="red",
+    "FALSE"="black"))+
+  facet_grid(
+    Folds ~ Rows + Groups + `Rows/Group` + strata + `Strata/Group` +Data,
+    scales="free",
+    labeller=label_both)+
+  scale_x_log10("Root Mean Squared Error (RMSE) for 10 random group orderings (for ties)")+
+  theme(
+    legend.position=c(0.3, 0.22),
+    legend.background=element_rect(fill="#ffffffcc"))
+png("several_Tasks_odd.png", width=8, height=3.5, units="in", res=200)
+print(gg)
+dev.off()
+
+gg <- ggplot()+
+  geom_point(aes(
+    RMSE, Algorithm, color=leakage),
+    shape=1,
+    data=several_Tasks[Data != "five" & is.finite(RSS) & folds %in% c(5)])+
+  scale_color_manual(
+    "Data leakage",
+    values=c(
+    "TRUE"="red",
+    "FALSE"="black"))+
+  facet_grid(
+    Folds ~ Rows + Groups + `Rows/Group` + strata + `Strata/Group` +Data,
+    labeller=label_both)+
+  scale_x_log10("Root Mean Squared Error (RMSE) for 10 random group orderings (for ties)")+
+  theme(
+    legend.position=c(0.3, 0.3),
+    legend.background=element_rect(fill="#ffffffcc"))
+png("several_Tasks_5fold.png", width=8, height=3.5, units="in", res=200)
+print(gg)
+dev.off()
+
 
 
