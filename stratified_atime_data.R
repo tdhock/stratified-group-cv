@@ -1,13 +1,12 @@
 remotes::install_github("tdhock/mlr3resampling")
 reticulate::conda_list()
-reticulate::use_condaenv("torch-aum")
+reticulate::use_condaenv("2023-08-deep-learning")
 library(data.table)
 library(ggplot2)
 train_dt <- fread("data/Laribi2024.csv")
 train_dt[1]
 reticulate::py_run_string("from stratified_group import stratified_group_k_fold, for_split")
 main <- reticulate::import_main()
-
 
 zfac <- function(x)as.integer(factor(x))-1L
 main$nfolds <- nfolds <- 5L
