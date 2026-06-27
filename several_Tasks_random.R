@@ -1,6 +1,7 @@
 library(data.table)
 library(ggplot2)
 data.csv.vec <- Sys.glob("data/Laribi2024.csv")
+data.csv.vec <- grep("Laribi", Sys.glob("data/*.csv"), value=TRUE, invert=TRUE)
 list2dt <- function(fold_list, set_name){
   data.table(fold=seq_along(fold_list))[, {
     task_row <- fold_list[[fold]][[set_name]]
@@ -92,30 +93,43 @@ for(data.i in seq_along(data.csv.vec)){
     ldt <- data.table(algo, dlist$labels)
     lab.dt.list[[algo]] <- ldt
     seg.dt.list[[algo]] <- data.table(algo, dlist$segments)
-    g.dt.list[[algo]] <- data.table(algo, group.long)[value==TRUE][ldt, on="label"]
+    g.dt.list[[algo]] <- data.table(algo, group.long)[value==TRUE][ldt, on=.NATURAL]
   }
   seg.dt <- rbindlist(seg.dt.list)
   lab.dt <- rbindlist(lab.dt.list)
-  g.dt <- rbindlist(g.dt.list)
-
-  gg <- ggplot()+
-    ggtitle(data.name)+
-    facet_grid(algo ~ facet, scales="free_x")+
-    geom_segment(aes(
-      y, x,
-      xend=yend,
-      yend=xend),
-      data=data.table(facet="tree", seg.dt))+
-    geom_text(aes(
-      -Inf, x, label=label),
-      hjust=0,
-      data=data.table(facet="tree", lab.dt))+
-    geom_tile(aes(
-      as.integer(variable), x, fill=value),
-      data=data.table(facet="groups", g.dt))
-  data.png <- sprintf("several_Tasks_random_%s.png", data.name)
-  png(data.png, width=10, height=6, units="in", res=200)
-  print(gg)
-  dev.off()
-  
+  g.dt <- rbindlist(g.dt.list)[, let(
+    pair.i = (x+1) %/% 2,
+    p01 = paste0("seed",(x+1) %% 2)
+  )][]
+  g.wide <- dcast(g.dt, algo + pair.i + variable ~ p01)[, same := seed0==seed1]
+  pair.dt <- g.wide[, .(
+    prop.same=sum(same, na.rm=TRUE)/.N,
+    nrow=.N
+  ), by=.(algo,pair.i)]
+  if(TRUE){
+    gg <- ggplot()+
+      ggtitle(data.name)+
+      facet_grid(algo ~ facet, scales="free_x")+
+      geom_segment(aes(
+        y, x,
+        xend=yend,
+        yend=xend),
+        data=data.table(facet="tree", seg.dt))+
+      geom_text(aes(
+        -Inf, x, label=label),
+        hjust=0,
+        data=data.table(facet="tree", lab.dt))+
+      geom_tile(aes(
+        as.integer(variable), x, fill=value),
+        data=data.table(facet="groups", g.dt))+
+      geom_text(aes(
+        Inf, pair.i*2, label=sprintf("%.1f%% same", prop.same*100)),
+        hjust=1,
+        vjust=1,
+        data=data.table(facet="groups", pair.dt))
+    data.png <- sprintf("several_Tasks_random_%s.png", data.name)
+    png(data.png, width=10, height=6, units="in", res=200)
+    print(gg)
+    dev.off()
+  }
 }
