@@ -93,7 +93,7 @@ for(data.i in seq_along(data.csv.vec)){
     ldt <- data.table(algo, dlist$labels)
     lab.dt.list[[algo]] <- ldt
     seg.dt.list[[algo]] <- data.table(algo, dlist$segments)
-    g.dt.list[[algo]] <- data.table(algo, group.long)[value==TRUE][ldt, on=.NATURAL]
+    g.dt.list[[algo]] <- data.table(algo, group.long)[ldt, on=.NATURAL]
   }
   seg.dt <- rbindlist(seg.dt.list)
   lab.dt <- rbindlist(lab.dt.list)
@@ -102,13 +102,26 @@ for(data.i in seq_along(data.csv.vec)){
     p01 = paste0("seed",(x+1) %% 2)
   )][]
   g.wide <- dcast(g.dt, algo + pair.i + variable ~ p01)[, same := seed0==seed1]
+  g.all <- g.dt[
+    value==TRUE,
+    .(pairs=length(unique(pair.i))),
+    by=.(algo, variable)
+  ][
+  , pair := ifelse(pairs==1, "same", "different")
+  ][]
+  tile.dt <- g.dt[g.all, on=.NATURAL]
   pair.dt <- g.wide[, .(
     prop.same=sum(same, na.rm=TRUE)/.N,
     nrow=.N
   ), by=.(algo,pair.i)]
+  all.pair.dt <- g.all[, .(
+    prop.same=sum(pair=="same")/.N,
+    nrow=.N
+  ), by=algo]
   if(TRUE){
     gg <- ggplot()+
-      ggtitle(data.name)+
+      ggtitle(sprintf("%d groups in %s", all.pair.dt$nrow[1], data.name))+
+      theme_bw()+
       facet_grid(algo ~ facet, scales="free_x")+
       geom_segment(aes(
         y, x,
@@ -120,13 +133,30 @@ for(data.i in seq_along(data.csv.vec)){
         hjust=0,
         data=data.table(facet="tree", lab.dt))+
       geom_tile(aes(
-        as.integer(variable), x, fill=value),
-        data=data.table(facet="groups", g.dt))+
+        as.integer(variable), x, fill=value, color=pair),
+        data=data.table(facet="groups", tile.dt[value==TRUE]))+
+      ## geom_text(aes(
+      ##   Inf, pair.i*2, label=sprintf("%.1f%% same in pair %d", prop.same*100, pair.i)),
+      ##   hjust=1,
+      ##   vjust=1,
+      ##   data=data.table(facet="groups", pair.dt))+
       geom_text(aes(
-        Inf, pair.i*2, label=sprintf("%.1f%% same", prop.same*100)),
-        hjust=1,
-        vjust=1,
-        data=data.table(facet="groups", pair.dt))
+        -Inf, Inf, label=sprintf(" %.1f%% groups in same pair", prop.same*100)),
+        hjust=0,
+        vjust=1.1,
+        data=data.table(facet="groups", all.pair.dt))+
+      scale_fill_manual(
+        "present",
+        values=c(
+          "FALSE"=NA,
+          "TRUE"="orange"))+
+      scale_color_manual(
+        guide=guide_legend(override.aes=list(linewidth=1, fill="orange")),
+        values=c(
+          "different"=NA,
+          "same"="grey50"))+
+      ylab("fold and seed")+
+      xlab("")
     data.png <- sprintf("several_Tasks_random_%s.png", data.name)
     png(data.png, width=10, height=6, units="in", res=200)
     print(gg)
