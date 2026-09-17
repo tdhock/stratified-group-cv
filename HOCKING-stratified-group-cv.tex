@@ -7,7 +7,7 @@
 \usepackage{natbib}
 \title{%Reduced asymptotic efficiency of
   Efficient
-  cross-validation fold assignment with groups in multiple strata}
+  cross-validation with groups and stratification}
 \author{Toby Hocking}
 \date{April 2026}
 
@@ -18,7 +18,13 @@
 \maketitle
 
 \begin{abstract}
-    Cross-validation is used throughout machine learning for model training and evaluation. In classification data sets, stratification is used to ensure that splits preserve class proportions. In structured data (image segmentation, medical visits, etc.), grouping is used to prevent data leakage (data from the same group should not appear in both train and test sets). Fold assignment is trivial with either stratification or grouping, but it is NP-hard with both stratification and grouping. Scikit-learn implements a heuristic that obtains reasonable fold assignments in this case, but its time and memory complexity can be prohibitive for large data. We propose a new heuristic algorithm with asymptotically less time and memory usage, that can be used on large data sets. In an empirical analysis of 4 real data sets, the proposed algorithm provides comparable fold assignments, and is at least ten times faster than the previous algorithm.
+  Cross-validation is used throughout machine learning for model training and evaluation.
+  In classification data sets, stratification is used to ensure that splits preserve class proportions.
+  In structured data (image segmentation, medical visits, etc.), grouping is used to prevent data leakage (data from the same group should not appear in both train and test sets).
+  Fold assignment is trivial with either stratification or grouping, but it is NP-hard with both stratification and grouping.
+  Scikit-learn implements a heuristic that obtains reasonable fold assignments in this case, but its time and memory complexity can be prohibitive for large data.
+  We propose a new heuristic algorithm with asymptotically less time and memory usage, that can be used on large data sets.
+  In an empirical analysis of four real data sets, the proposed algorithm provides comparable fold assignments, and is at least ten times faster than the previous algorithm.
 \end{abstract} 
 
 
@@ -67,6 +73,9 @@ Medical data (respiratory in R), each patient is a group.
 Satellite image segmentation, each labeled region is a group.
 
 Pet adoption data, each rescuer is a group.
+
+A typical application of stratification is in classification problems, where the stratum variable is defined as the same as the label/output variable to predict.
+Other strata variables correspond to the domain/subset, when evaluating domain adaptation algorithms (TODO citation), and when estimating similarity of data subsets for learning purposes \citep{Hocking2026soak}.
 
 \subsection{Contributions}
 
@@ -322,7 +331,8 @@ stratify: logical, keep outcome proportions similar across folds. For
 \end{table}
 
 \subsection{Implementation details}
-We 
+We implemented our proposed algorithms in C++ for time and memory efficiency in large data.
+TODO
 \section{Results}
 
 \subsection{Data sets}
@@ -381,6 +391,9 @@ Laribi2024 & 248,485 & 123,646 & 1–30 &   2 & 1–2 \\
     \label{tab:placeholder}
 \end{table}
 
+\section{Conclusions}
+
+Other loss functions like max norm objective in \citet{Pop2013}.
 
 \bibliographystyle{abbrvnat}
 \bibliography{refs}

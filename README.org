@@ -2,16 +2,16 @@
 
 [[https://docs.google.com/presentation/d/1gXEqaPQBdJxA39iLqy6SlpA1LZGHcOOgJ1dT1_lzVlo/edit?usp=sharing][Google slides]]
 
-Title: Efficient cross-validation with groups in multiple strata
+Title: Efficient cross-validation with groups and stratification
 
-Abstract: Cross-validation is used throughout machine learning for model training and evaluation.
-In classification data sets, stratification is used to ensure that splits preserve class proportions.
-In structured data (image segmentation, medical visits, etc.), grouping is used to prevent data leakage (data from the same group should not appear in both train and test sets).
-Fold assignment is trivial with either stratification or grouping, but it is NP-hard with both stratification and grouping.
-This is an instance of the multidimensional multi-way number partitioning problem, which has been called the “easiest hard problem” [Hayes, 2002].
-The previous quadratic time heuristic of Wasikowski (sklearn.model_selection.StratifiedGroupKFold) obtains reasonable fold assignments by minimizing variance between folds.
-We propose a new linear time heuristic assignment that minimizes squared error between ideal and actual counts per fold and stratum.
-In an empirical analysis of 4 data sets, the proposed algorithm provides reasonable fold assignments, and is ~10x faster than the previous algorithm.
+Abstract:
+  Cross-validation is used throughout machine learning for model training and evaluation.
+  In classification data sets, stratification is used to ensure that splits preserve class proportions.
+  In structured data (image segmentation, medical visits, etc.), grouping is used to prevent data leakage (data from the same group should not appear in both train and test sets).
+  Fold assignment is trivial with either stratification or grouping, but it is NP-hard with both stratification and grouping.
+  Scikit-learn implements a heuristic that obtains reasonable fold assignments in this case, but its time and memory complexity can be prohibitive for large data.
+  We propose a new heuristic algorithm with asymptotically less time and memory usage, that can be used on large data sets.
+  In an empirical analysis of four real data sets, the proposed algorithm provides comparable fold assignments, and is at least ten times faster than the previous algorithm.
 
 ** 3 June 2026
 
