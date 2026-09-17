@@ -1,0 +1,336 @@
+\documentclass{article}
+\usepackage{tikz}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{fullpage}
+\usepackage{hyperref} % Required for inserting images
+\usepackage{amsmath}
+\usepackage{natbib}
+\title{%Reduced asymptotic efficiency of
+  Efficient
+  cross-validation fold assignment with groups in multiple strata}
+\author{Toby Hocking}
+\date{April 2026}
+
+\DeclareMathOperator*{\argmin}{arg\, min} 
+\DeclareMathOperator*{\argmax}{arg\, max} 
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+    Cross-validation is used throughout machine learning for model training and evaluation. In classification data sets, stratification is used to ensure that splits preserve class proportions. In structured data (image segmentation, medical visits, etc.), grouping is used to prevent data leakage (data from the same group should not appear in both train and test sets). Fold assignment is trivial with either stratification or grouping, but it is NP-hard with both stratification and grouping. Scikit-learn implements a heuristic that obtains reasonable fold assignments in this case, but its time and memory complexity can be prohibitive for large data. We propose a new heuristic algorithm with asymptotically less time and memory usage, that can be used on large data sets. In an empirical analysis of 4 real data sets, the proposed algorithm provides comparable fold assignments, and is at least ten times faster than the previous algorithm.
+\end{abstract} 
+
+
+
+% Let there be $S$ strata in $K$-fold CV.
+% Let $c = [c_1, \dots, c_S ]$ be strata counts for the next group --- it should be assigned to which fold $k$?
+% \begin{eqnarray}
+% \text{OldRSS}=
+% &\sum_{\sigma\in\{1,\dots,S\}}&
+% \sum_{\phi\in\{1,\dots,K\}}
+% (\overbrace{\hat n_{\sigma,\phi}}^{\text{actual}} - \overbrace{n^*_\sigma}^{\text{ideal}})^2
+% \\
+% \text{NewRSS} = \min_{k\in\{1,\dots,K\}}
+% &\sum_{\sigma\in\{1,\dots,S\}}&
+% \sum_{\phi\in\{1,\dots,K\}}
+% \big(
+% (\hat n_{\sigma,\phi}+c_\sigma I[\phi=k]) - n^*_\sigma\big)^2
+% \\
+% \text{NewRSS} = \text{OldRSS} + \min_{k\in\{1,\dots,K\}}
+% &\sum_{\sigma\in\{1,\dots,S\}}&
+% c_\sigma ( 2 \hat n_{\sigma,k} +
+% \underbrace{c_\sigma - 2n^*_\sigma}_{\text{no $k$}} 
+% )
+% \\
+% k^* = 
+% \argmin_{k\in\{1,\dots,K\}}
+% &\sum_{\sigma\in\{1,\dots,S\}}&
+% c_\sigma \hat n_{\sigma,k}
+% \end{eqnarray}
+
+
+Similar to 
+\url{https://en.wikipedia.org/wiki/Bin_packinc_problem}
+but with a fixed number of bins.
+
+Quoting from that article:
+``In the bin packing problem, the size of the bins is fixed and their number can be enlarged (but should be as small as possible).
+In the multiway number partitioning problem, \url{https://en.wikipedia.org/wiki/Multiway_number_partitioning} the number of bins is fixed and their size can be enlarged.''
+\citet{Pop2013} proposed a heuristic (genetic algorithm and local search) to solve this multidimensional multi-way number partitioning problem.
+
+\citet{hayes2002computing} called it the ``easiest hard problem'' and discussed the example of picking team members in a game like soccer. 
+
+\section{Introduction}
+Medical data (respiratory in R), each patient is a group.
+
+Satellite image segmentation, each labeled region is a group.
+
+Pet adoption data, each rescuer is a group.
+
+\subsection{Contributions}
+
+Complexity analysis of previous Wasikowski algorthm in terms of two sub-routines, Sort() and get best fold().
+
+Proposed online counting and group assignment algorithm, for asymptotically less memory usage.
+Drops a potentially large $O(SG)$ term from memory complexity.
+
+Proposed RSS minimization algorithm which is asymptotically faster: previous quadratic time in number of folds $K$ is reduced to linear time.
+
+Systematic comparisons with 8 previous software packages, in terms of features and fold assignment accuracy.
+
+\section{Related Work}
+
+Wasikowski (sklearn.model\_selection.StratifiedGroupKFold) 
+
+\begin{table}[t]
+  \centering
+  %\small
+  \begin{tabular}{ccccccc}
+             &       &        &        &           &           & group\\
+             &       &        &        & 1 stratum & 2+ strata & +stratum\\
+    Software & group & strata & subset & per group & per group &  +subset\\
+    \hline
+mlr3&yes&yes&no&no&no&no\\
+caret&yes&yes&no&no&no&no\\
+splitTools&yes&yes&no&no&no&no\\
+origami&yes&yes&no&random+leakage&no&no\\
+rsample&yes&yes&no&random&no&no\\
+bioLeak&yes&yes&no&random&random&no\\
+sklearn&yes&yes&no&yes&yes&no\\
+soakpy&no&no&yes&no&no&no\\
+\textbf{mlr3resampling}&yes&yes&yes&yes&yes&yes
+  \end{tabular}
+  \caption{Comparing features provided by previous software, and proposed \textbf{mlr3resampling} R package.}
+  \label{tab:related}
+\end{table}
+\section{Proposed Methods}
+
+Assume we have a data set with $N$ rows in $S$ strata and $G$ groups.
+We want to perform $K$-fold cross-validation, such that data in each group are assigned the same fold ID, and the strata proportions in each fold are approximately equal.
+
+For each row $i\in\{1,\dots,N\}$, we have a stratum $s_i\in\{1,\dots,S\}$, and a group $g_i\in\{1,\dots,G\}$.
+The algorithm begins by counting the number of data in each stratum, then dividing by the number of folds, to obtain the ideal number of data.
+For each stratum $\sigma\in\{1,\dots,S\}$, the ideal number of data is
+\begin{equation}
+n^*_\sigma = \sum_{i\in\{1,\dots,N\}}
+I[s_i = \sigma]/K,
+\end{equation}
+where $I[\cdot]$ is the indicator function (1 if argument is true, 0 otherwise).
+
+For each stratum $\sigma$ and fold $\phi\in\{1,\dots,K\}$, let $\hat n_{\sigma,\phi}$ be the number of data with that stratum assigned to that fold.
+The optimization problem is to find a fold assignment which minimizes the residual sum of squares,
+\begin{equation}
+\text{RSS}=
+\sum_{\sigma\in\{1,\dots,S\}}
+\sum_{\phi\in\{1,\dots,K\}}
+(\hat n_{\sigma,\phi} - n^*_\sigma)^2.
+\end{equation}
+
+We propose a greedy algorithm that computes an approximate solution in linear time (Table~\ref{tab:complexity}).
+The algorithm starts with all $\hat n_{\sigma,\phi}=0$ and then assigns a fold to one group at a time.
+Let $c_1,\dots,c_S $ be the counts of data in each stratum for the current group.
+The problem is to decide the fold assignment for this group,
+\begin{equation}
+\min_{k\in\{1,\dots,K\}}
+\sum_{\sigma\in\{1,\dots,S\}}
+\sum_{\phi\in\{1,\dots,K\}}
+\big(
+(\hat n_{\sigma,\phi}+c_\sigma I[\phi=k]) - n^*_\sigma\big)^2.
+\end{equation}
+Expanding the square and simplifying yields
+\begin{equation}
+\min_{k\in\{1,\dots,K\}}
+\sum_{\sigma\in\{1,\dots,S\}}
+\sum_{\phi\in\{1,\dots,K\}}
+\hat n^2_{\sigma,\phi}
+- 2 \hat n_{\sigma,\phi} n^*_\sigma
++ {n^*_\sigma}^2
++ I[\phi=k] c_\sigma ( 2 \hat n_{\sigma,\phi} + c_\sigma - 2n^*_\sigma ).
+\end{equation}
+The first three terms above are the current RSS, which does not depend on $k$, so it is a constant that we can remove from the optimization problem.
+Furthermore, the indicator function cancels the sum over folds $\phi$, yielding
+\begin{equation}
+\text{RSS} + \min_{k\in\{1,\dots,K\}}
+\sum_{\sigma\in\{1,\dots,S\}}
+c_\sigma ( 2 \hat n_{\sigma,k} + c_\sigma - 2n^*_\sigma ),
+\end{equation}
+% Simplifying yields
+% \begin{equation}
+% \text{RSS} + \min_{k\in\{1,\dots,K\}}
+% \sum_{\sigma\in\{1,\dots,S\}}
+% c_\sigma\big(c_\sigma+2(\hat n_{\sigma,k}-n^*_\sigma)\big),
+% \end{equation}
+which is a simple update rule that can be used to obtain an efficient algorithm.
+Taking the argmin, we can remove the terms that do not depend on $k$, yielding
+\begin{equation}
+  \label{eq:k*}
+k^* = 
+\argmin_{k\in\{1,\dots,K\}}
+\sum_{\sigma\in\{1,\dots,S\}}
+c_\sigma \hat n_{\sigma,k}.
+\end{equation}
+\subsection{Complexity analysis}
+We assume there are $N$ data, $K$ folds, $G$ groups, and $S$ strata.
+All algorithms begin by sorting the groups, typically $O(N\log N)$ time.
+
+The previous Wasikowski algorithm begins by computing a $G\times S$ matrix of counts per group and stratum, requiring $O(GS)$ time and memory.
+For large $G$ and $S$, this large count matrix will be very sparse (almost all entries zero), which is inefficient.
+Because the large size of this matrix could be prohibitive, we propose to modify the Wasikowski algorithm to avoid this inefficiency.
+Our proposed memory-efficient variant is called Wasikowski-L in Table~\ref{tab:complexity} (L for Limited memory).
+We propose to first sort the data by group, then compute and store a count vector for only the current group, thus reducing the memory requirement to $O(S)$, which can be ignored since it is smaller than $O(N)$ (Table~\ref{tab:complexity}, proposed rows, Memory column).
+
+The previous Wasikowski algorithm maintains a $K\times S$ matrix of counts per fold and stratum.
+The \texttt{get\_best\_fold()} method considers putting the new group in each of the $K$ folds, then computes SD over folds for each stratum, then mean of SD values over strata.
+The \texttt{get\_best\_fold()} method is therefore $O(K^2 S)$ time, and the overall algorithm is therefore $O(N\log N + K^2 G S)$ time (Table~\ref{tab:complexity}, Wasikowski rows, Time column).
+
+The proposed RSS minimization procedure~(\ref{eq:k*}) has a sum over $S$ terms inside a min over $K$ terms.
+The proposed \texttt{get\_best\_fold()} is therefore $O(SK)$ time.
+Comparing to the previous Wasikowski algorthm, the proposed RSS minimization is asymptotically faster (linear rather than quadratic in the number of folds $K$).
+The overall time complexity of the proposed RSS minimization algorithm is therefore
+
+TODO pseudo-code.
+
+\begin{verbatim}
+def assign_folds(strata, groups, N_folds):
+  count_matrix = zeros(N_strata, N_folds)
+  folds = []
+  for group in Sort(groups):
+    best_fold = get_best_fold(group)
+    count_matrix[, best_fold] += get_count(group)
+    folds.append(group, best_fold)
+  return folds
+\end{verbatim}
+
+\subsection{Simple example where RSS beats Wasikowski}
+
+\begin{verbatim}
+   counts  fold   rss
+1:    1,3     1     0
+2:    1,2     2     1
+3:    0,2     3     2
+4:    1,1     3     4
+5:    0,1     2     5
+   fold
+y   1 2 3
+  1 1 1 1
+  2 3 3 3
+   counts  fold   var g_ord
+1:    0,2     1   2.0     1
+2:    1,3     2   2.0     6
+3:    1,2     3   0.5     2
+4:    0,1     1   0.5     8
+5:    1,1     1   0.0     4
+   fold
+y   1 2 3
+  1 1 1 1
+  2 4 3 2
+\end{verbatim}
+
+\subsection{Tie-breaking}
+\begin{verbatim}
+Example: 6 groups, 2-fold CV.
+     group   rss  nrow  freq
+ 1:    5,3     5     8  22.5
+ 2:    3,0    34     3   9.0
+ 3:    1,2    34     3   8.0
+ 4:    1,2    34     3   8.0
+ 5:    1,2    34     3   8.0
+ 6:    1,1    41     2   5.5
+TOTAL 12,10
+ideal  6,5    
+\end{verbatim}
+
+\begin{verbatim}
+freq = mean(ideal*group)
+-Prefer groups with more
+ data in larger strata.
+\end{verbatim}
+
+\begin{verbatim}
+     group  fold  fold1  fold2
+1:    5,3     1    5,3    0,0
+2:    1,2     2    5,3    1,2
+3:    1,2     2    5,3    2,4
+4:    1,2     2    5,3    3,6
+5:    3,0     2    5,3    6,6
+6:    1,1     1    6,4    6,6
+3,0 added near end = Not ideal!    
+\end{verbatim}
+
+\begin{verbatim}
+1:    5,3     1    5,3    0,0
+2:    3,0     2    5,3    3,0
+3:    1,2     2    5,3    4,2
+4:    1,2     2    5,3    5,4
+5:    1,2     1    6,5    5,4
+6:    1,1     2    6,5    6,5
+3,0 added first =  Yes ideal!
+\end{verbatim}
+
+
+
+\verb|bioLeak::make_split_plan|
+stratify: logical, keep outcome proportions similar across folds. For
+          grouped modes, stratification is applied at the group level
+          (by majority class per group) if 'outcome' is provided;
+          otherwise ignored.
+
+\begin{table}[t]
+    \centering
+    \begin{tabular}{c|c|l}
+        Algorithm &  Time    & Memory \\
+        \hline
+        Wasikowski & $O(N\log N + K^2GS)$ & $O(N + SK+SG)$\\
+        Wasikowski-L (proposed) & $O(N\log N + K^2GS)$ & $O(N + SK)$\\
+        %MinRSS (proposed) & $O(N + KGS)$  & $O(N + SK + SG)$\\
+        MinRSS (proposed) & $O(N\log N + KGS)$  & $O(N + SK)$
+    \end{tabular}
+    \caption{Time and memory complexity for computing $K$-fold cross-validation assignment, given $N$ data rows in $S$ strata and $G$ groups.}
+    \label{tab:complexity}
+\end{table}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{several_Tasks_even.png}
+    \caption{Caption}
+    \label{fig:several_Tasks}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    % \includegraphics[width=\linewidth]{Laribi2024-figure-refs}
+    \input{Laribi2024-figure-refs-input}
+    \caption{Caption}
+    \label{fig:Laribi-refs}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    % \includegraphics[width=\linewidth]{Laribi2024-figure-rows}
+    \input{Laribi2024-figure-rows-input}
+    \caption{Caption}
+    \label{fig:Laribi-rows}
+\end{figure}
+
+\begin{table}[t]
+    \centering
+\begin{tabular}{lrrrrr}
+  \hline
+Data & Rows & Groups & Rows/Group & Strata & Strata/Group \\ 
+  \hline
+Laribi2024 & 248,485 & 123,646 & 1–30 &   2 & 1–2 \\ 
+  PetAdoption & 14,993 & 5,595 & 1–459 &   5 & 1–5 \\ 
+  AZtrees & 5,956 & 189 & 1–1,478 &   2 & 1 \\ 
+  respiratory & 444 & 111 & 4 &   2 & 1–2 \\ 
+   \hline
+    \end{tabular}
+    \caption{Caption}
+    \label{tab:placeholder}
+\end{table}
+
+
+\bibliographystyle{abbrvnat}
+\bibliography{refs}
+
+\end{document}
