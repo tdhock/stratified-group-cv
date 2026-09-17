@@ -306,25 +306,46 @@ stratify: logical, keep outcome proportions similar across folds. For
           grouped modes, stratification is applied at the group level
           (by majority class per group) if 'outcome' is provided;
           otherwise ignored.
-
+          
 \begin{table}[t]
-    \centering
-    \begin{tabular}{c|c|l}
-        Algorithm &  Time    & Memory \\
-        \hline
-        Wasikowski & $O(N\log N + K^2GS)$ & $O(N + SK+SG)$\\
-        Wasikowski-L (proposed) & $O(N\log N + K^2GS)$ & $O(N + SK)$\\
-        %MinRSS (proposed) & $O(N + KGS)$  & $O(N + SK + SG)$\\
+  \centering
+  \begin{tabular}{c|c|l}
+    Algorithm &  Time    & Memory \\
+    \hline
+    Wasikowski & $O(N\log N + K^2GS)$ & $O(N + SK+SG)$\\
+    Wasikowski-L (proposed) & $O(N\log N + K^2GS)$ & $O(N + SK)$\\
+    % MinRSS (proposed) & $O(N + KGS)$  & $O(N + SK + SG)$\\
         MinRSS (proposed) & $O(N\log N + KGS)$  & $O(N + SK)$
     \end{tabular}
     \caption{Time and memory complexity for computing $K$-fold cross-validation assignment, given $N$ data rows in $S$ strata and $G$ groups.}
     \label{tab:complexity}
 \end{table}
 
+\subsection{Implementation details}
+We 
+\section{Results}
+
+\subsection{Data sets}
+
+\subsection{Algorithms}
+
+We compared the proposed RSS minimization heuristic to five other algorithms.
+First, the random baseline is the trivial algorithm which assigns each group to a random fold (no leakage, but high error rate).
+Second, we ran the Wasikowski variance minimization heuristic, which has a Python/numpy implementation in scikit-learn.
+We re-implemented this algorithm in C++ for a more controlled comparison with our proposed C++ code for RSS minimization.
+We also ran three other R packages with functions for computing fold assignment using stratification and groups:
+
+\begin{itemize}
+\item \verb|bioLeak::make_split_plan(mode="subject_grouped", stratify=TRUE)|,
+\item \verb|rsample::group_vfold_cv(balance="observations")|, 
+\item \verb|origami::make_folds()|.
+\end{itemize}
+
+
 \begin{figure}[t]
     \centering
     \includegraphics[width=\linewidth]{several_Tasks_even.png}
-    \caption{Caption}
+    \caption{Results of cross-validation fold assignment using six algorithms on four real data sets.}
     \label{fig:several_Tasks}
 \end{figure}
 
