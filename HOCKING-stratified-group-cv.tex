@@ -7,8 +7,7 @@
 \usepackage{amsmath}
 \usepackage{natbib}
 \title{%Reduced asymptotic efficiency of
-  Efficient
-  cross-validation with groups and stratification}
+  Efficient cross-validation with groups and stratification}
 \author{Toby Hocking}
 \date{April 2026}
 
@@ -87,7 +86,7 @@ Stratified fold assignment is desirable in order to preserve the relative class 
 \begin{tabular}{|cc|r|rrr|rrr|rrrr|}
   \hline
 &&  & &&& \multicolumn{3}{c|}{groups in} & \multicolumn{4}{c|}{groups in} \\
-Case &Structure& Class $y$ &\multicolumn{3}{c|}{data in folds} & \multicolumn{3}{c|}{one fold (ok)} & \multicolumn{4}{c|}{multiple folds (leakage)} \\
+Case &Structure& Class $y$ &\multicolumn{3}{c|}{data rows in folds} & \multicolumn{3}{c|}{one fold (ok)} & \multicolumn{4}{c|}{multiple folds (leakage)} \\
 &(algorithm)& =stratum & f1 & f2 & f3 & f1 & f2 & f3 & f1–2 & f2–3 & f1,3 & f1–3 \\ 
   \hline
 &no group&Negative & 1749 & 1761 & 1772 &   1 &    &   3 &   4 &    &   4 &  60 \\ 
@@ -111,7 +110,7 @@ E)&yes strata&Positive &  \textbf{225} & \textbf{224} & \textbf{225} &  39 &  39
 &(proposed)&Total &  \textbf{1986} & \textbf{1985} & \textbf{1985} &  58 &  65 &  66 &  &  &  &  \\ 
    \hline
 \end{tabular}
-\caption{Demonstration of trivial and proposed algorithms for five cases of cross-validation with $K=3$ folds in AZtrees data, with $N=5956$ data, $G=189$ groups, and $S=2$ strata (same as binary label $y$).
+\caption{Demonstration of trivial and proposed algorithms for five cases of $K=3$ fold cross-validation in AZtrees data, with $N=5956$ rows, $G=189$ groups, and $S=2$ strata (same as binary label $y$).
   The proposed algorithm with stratification and groups (case E) gives nearly equal data counts across folds (\textbf{bold}), and no leakage (empty entries in the right columns, meaning zero groups assigned to multiple folds).
 }
 \end{table}
