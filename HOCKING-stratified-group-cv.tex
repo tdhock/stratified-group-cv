@@ -81,32 +81,34 @@ Other strata variables correspond to the domain/subset, when evaluating domain a
 \begin{table}[ht]
   \centering
   % tdhock/stratified-group-cv/table-AZtrees.R
-\begin{tabular}{rrrrrrrrrrr}
+\begin{tabular}{|cc|r|rrr|rrr|rrrr|}
   \hline
-  & \multicolumn{3}{c|}{data in folds} & \multicolumn{7}{c|}{groups in folds} \\
- & 1 & 2 & 3 & 1 & 2 & 3 & 1–2 & 2–3 & 1,3 & 1–3 \\ 
+&&  & &&& \multicolumn{3}{c|}{groups in} & \multicolumn{4}{c|}{groups in} \\
+Case &Structure& Class $y$ &\multicolumn{3}{c|}{data in folds} & \multicolumn{3}{c|}{one fold (ok)} & \multicolumn{4}{c|}{multiple folds (leakage)} \\
+&(algorithm)& =stratum & f1 & f2 & f3 & f1 & f2 & f3 & f1–2 & f2–3 & f1,3 & f1–3 \\ 
   \hline
-Negative & 1749 & 1761 & 1772 &   1 &   0 &   3 &   4 &   0 &   4 &  60 \\ 
-Positive &  237 & 224 & 213 &  16 &  13 &  10 &  13 &  15 &   8 &  42 \\ 
-Total &  1986 & 1985 & 1985 &  17 &  13 &  13 &  17 &  15 &  12 & 102 \\ 
+&no group&Negative & 1749 & 1761 & 1772 &   1 &    &   3 &   4 &    &   4 &  60 \\ 
+A) &no strata&Positive &  237 & 224 & 213 &  16 &  13 &  10 &  13 &  15 &   8 &  42 \\ 
+&(trivial)&Total &  \textbf{1986} & \textbf{1985} & \textbf{1985} &  17 &  13 &  13 &  17 &  15 &  12 & 102 \\ 
   \hline
-Negative &  1761 & 1761 & 1760 &   2 &   3 &   0 &   1 &   3 &   3 &  60 \\ 
-Positive &  225 & 225 & 224 &  14 &  11 &  12 &  14 &  13 &   9 &  44 \\ 
-Total &  1986 & 1986 & 1984 &  16 &  14 &  12 &  15 &  16 &  12 & 104 \\ 
+&no group&Negative &  \textbf{1761} & \textbf{1761} & \textbf{1760} &   2 &   3 &    &   1 &   3 &   3 &  60 \\ 
+B)&yes strata&Positive &  \textbf{225} & \textbf{225} & \textbf{224} &  14 &  11 &  12 &  14 &  13 &   9 &  44 \\ 
+&(trivial)&Total &  \textbf{1986} & \textbf{1986} & \textbf{1984} &  16 &  14 &  12 &  15 &  16 &  12 & 104 \\ 
   \hline
-Negative &  1806 & 1066 & 2410 &  23 &  25 &  24 &  &  &  &  \\ 
-Positive &  320 & 187 & 167 &  40 &  38 &  39 &  &  &  &  \\ 
-Total &  2126 & 1253 & 2577 &  63 &  63 &  63 &  &  &  &  \\ 
+&yes group&Negative &  1806 & 1066 & 2410 &  23 &  25 &  24 &  &  &  &  \\ 
+C)&no strata&Positive &  320 & 187 & 167 &  40 &  38 &  39 &  &  &  &  \\ 
+&(trivial)&Total &  2126 & 1253 & 2577 &  \textbf{63} &  \textbf{63} &  \textbf{63} &  &  &  &  \\ 
   \hline
-Negative &  1803 & 1756 & 1723 &  19 &  28 &  25 &  &  &  &  \\ 
-Positive &  183 & 229 & 262 &  39 &  36 &  42 &  &  &  &  \\ 
-Total &  1986 & 1985 & 1985 &  58 &  64 &  67 &  &  &  &  \\ 
+&yes group&Negative &  1803 & 1756 & 1723 &  19 &  28 &  25 &  &  &  &  \\ 
+D)&no strata&Positive &  183 & 229 & 262 &  39 &  36 &  42 &  &  &  &  \\ 
+&(proposed)&Total &  \textbf{1986} & \textbf{1985} & \textbf{1985} &  58 &  64 &  67 &  &  &  &  \\ 
   \hline
-Negative &  1761 & 1761 & 1760 &  19 &  26 &  27 &  &  &  &  \\ 
-Positive &  225 & 224 & 225 &  39 &  39 &  39 &  &  &  &  \\ 
-Total &  1986 & 1985 & 1985 &  58 &  65 &  66 &  &  &  &  \\ 
+&yes group&Negative &  \textbf{1761} & \textbf{1761} & \textbf{1760} &  19 &  26 &  27 &  &  &  &  \\ 
+E)&yes strata&Positive &  \textbf{225} & \textbf{224} & \textbf{225} &  39 &  39 &  39 &  &  &  &  \\ 
+&(proposed)&Total &  \textbf{1986} & \textbf{1985} & \textbf{1985} &  58 &  65 &  66 &  &  &  &  \\ 
    \hline
 \end{tabular}
+\caption{Demonstration of trivial and proposed algorithms for five cases of cross-validation with $K=3$ folds in AZtrees data, with $N=5956$ data, $G=189$ groups, and $S=2$ strata (same as binary label $y$). }
 \end{table}
 
 \subsection{Contributions}
