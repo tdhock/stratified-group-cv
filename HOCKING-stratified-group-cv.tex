@@ -78,6 +78,9 @@ Pet adoption data, each rescuer is a group.
 A typical application of stratification is in classification problems, where the stratum variable is defined as the same as the label/output variable to predict.
 Other strata variables correspond to the domain/subset, when evaluating domain adaptation algorithms (TODO citation), and when estimating similarity of data subsets for learning purposes \citep{Hocking2026soak}.
 
+Stratified fold assignment is desirable in order to preserve the relative class frequencies in the train/test split.
+
+
 \begin{table}[ht]
   \centering
   % tdhock/stratified-group-cv/table-AZtrees.R
@@ -108,7 +111,9 @@ E)&yes strata&Positive &  \textbf{225} & \textbf{224} & \textbf{225} &  39 &  39
 &(proposed)&Total &  \textbf{1986} & \textbf{1985} & \textbf{1985} &  58 &  65 &  66 &  &  &  &  \\ 
    \hline
 \end{tabular}
-\caption{Demonstration of trivial and proposed algorithms for five cases of cross-validation with $K=3$ folds in AZtrees data, with $N=5956$ data, $G=189$ groups, and $S=2$ strata (same as binary label $y$). }
+\caption{Demonstration of trivial and proposed algorithms for five cases of cross-validation with $K=3$ folds in AZtrees data, with $N=5956$ data, $G=189$ groups, and $S=2$ strata (same as binary label $y$).
+  The proposed algorithm with stratification and groups (case E) gives nearly equal data counts across folds (\textbf{bold}), and no leakage (empty entries in the right columns, meaning zero groups assigned to multiple folds).
+}
 \end{table}
 
 \subsection{Contributions}
@@ -401,18 +406,18 @@ We also ran three other R packages with functions for computing fold assignment 
 \begin{figure}[t]
     \centering
     % github.com/tdhock/stratified-group-cv Laribi2024-figure.R
-    \input{Laribi2024-figure-refs-input}
-    \caption{Caption}
+    \parbox{3.3in}{
+      \input{Laribi2024-figure-refs-small-input}
+    }\parbox{3.3in}{
+      \input{Laribi2024-figure-rows-small-input}
+    }
+    \vspace{-0.4in}
+    \caption{Empirical timings of previous and proposed algorithms, implemented in C++ code, run on Laribi2024 data (colored curves for mean, shaded band for min/max).
+      \textbf{Left:} timings as number of folds $K$ increases. Asymptotic reference curves (black), fit to largest empirical $K$ values, indicate that previous Wasikowski is $O(K^2)$, and proposed RSS is $O(K)$, as expected.
+    \textbf{Right:} timings as number of data $N$ increases shows that RSS is $\approx 10$ times faster asymptotically.  }
     \label{fig:Laribi-refs}
 \end{figure}
 
-\begin{figure}[t]
-    \centering
-    % github.com/tdhock/stratified-group-cv Laribi2024-figure.R
-    \input{Laribi2024-figure-rows-input}
-    \caption{Caption}
-    \label{fig:Laribi-rows}
-\end{figure}
 
 \begin{table}[t]
     \centering
@@ -426,7 +431,7 @@ Laribi2024 & 248,485 & 123,646 & 1–30 &   2 & 1–2 \\
   respiratory & 444 & 111 & 4 &   2 & 1–2 \\ 
    \hline
     \end{tabular}
-    \caption{Caption}
+    \caption{Remove because redundant with figure?}
     \label{tab:placeholder}
 \end{table}
 
