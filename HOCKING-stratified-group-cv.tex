@@ -27,58 +27,26 @@
   In an empirical analysis of four real data sets, the proposed algorithm provides comparable fold assignments, and is at least ten times faster than the previous algorithm.
 \end{abstract} 
 
-
-
-% Let there be $S$ strata in $K$-fold CV.
-% Let $c = [c_1, \dots, c_S ]$ be strata counts for the next group --- it should be assigned to which fold $k$?
-% \begin{eqnarray}
-% \text{OldRSS}=
-% &\sum_{\sigma\in\{1,\dots,S\}}&
-% \sum_{\phi\in\{1,\dots,K\}}
-% (\overbrace{\hat n_{\sigma,\phi}}^{\text{actual}} - \overbrace{n^*_\sigma}^{\text{ideal}})^2
-% \\
-% \text{NewRSS} = \min_{k\in\{1,\dots,K\}}
-% &\sum_{\sigma\in\{1,\dots,S\}}&
-% \sum_{\phi\in\{1,\dots,K\}}
-% \big(
-% (\hat n_{\sigma,\phi}+c_\sigma I[\phi=k]) - n^*_\sigma\big)^2
-% \\
-% \text{NewRSS} = \text{OldRSS} + \min_{k\in\{1,\dots,K\}}
-% &\sum_{\sigma\in\{1,\dots,S\}}&
-% c_\sigma ( 2 \hat n_{\sigma,k} +
-% \underbrace{c_\sigma - 2n^*_\sigma}_{\text{no $k$}} 
-% )
-% \\
-% k^* = 
-% \argmin_{k\in\{1,\dots,K\}}
-% &\sum_{\sigma\in\{1,\dots,S\}}&
-% c_\sigma \hat n_{\sigma,k}
-% \end{eqnarray}
-
-
-Similar to 
-\url{https://en.wikipedia.org/wiki/Bin_packinc_problem}
-but with a fixed number of bins.
-
-Quoting from that article:
-``In the bin packing problem, the size of the bins is fixed and their number can be enlarged (but should be as small as possible).
-In the multiway number partitioning problem, \url{https://en.wikipedia.org/wiki/Multiway_number_partitioning} the number of bins is fixed and their size can be enlarged.''
-\citet{Pop2013} proposed a heuristic (genetic algorithm and local search) to solve this multidimensional multi-way number partitioning problem.
-
-\citet{hayes2002computing} called it the ``easiest hard problem'' and discussed the example of picking team members in a game like soccer. 
-
 \section{Introduction}
-Medical data (respiratory in R), each patient is a group.
 
-Satellite image segmentation, each labeled region is a group.
+Many types of modern artificially intelligent systems are powered by machine learning: image classification, medical diagnosis/prognosis, automatic translation, etc.
+$K$-fold cross-validation (TODO citation) is a fundamental data-splitting technique that is used for both training (tuning hyper-parameters of a learning algorithm) and evaluation (comparing different learning algorithms).
+In a data set of $N$ observations, $K$-fold cross-validation involves assigning a fold ID (integer between 1 and $K$) to each of the $N$ observations.
+For each fold ID from 1 to $K$, the corresponding observations form a test set, and the other observations form a train set (for the case of evaluation).
+Learning algorithms are fit to each train set, then prediction error rates are computed on the corresponding test set.
+The resulting $K$ measurements of prediction error on the test sets are used to estimate how the learning algorithm would perform on new data from the same distribution.
 
-Pet adoption data, each rescuer is a group.
+%TODO different kinds of data, Motivation for stratification and grouping
 
-A typical application of stratification is in classification problems, where the stratum variable is defined as the same as the label/output variable to predict.
-Other strata variables correspond to the domain/subset, when evaluating domain adaptation algorithms (TODO citation), and when estimating similarity of data subsets for learning purposes \citep{Hocking2026soak}.
+\subsection{Issues with unstructured cross-validation in structured data}
 
-Stratified fold assignment is desirable in order to preserve the relative class frequencies in the train/test split.
-
+Because the goal of data-splitting is to estimate prediction error in the same distributional setting as the original data set, it is important for the splitting procedure to generate train/test sets which are representative of the original data.
+In an unstructured data set, we would at least like to ensure that each test set has the same number of observations.
+For example, consider the AZtrees data \citep{Hocking2026soak}, which represent an image segmentation problem.
+There are $N=5956$ rows, each representing a pixel in an image that has been labeled as containing a tree (positive class) or not (background negative class), so in $K=3$ fold cross-validation, we expect each fold to have approximately $N/K=1985.33$ rows.
+Standard unstructured cross-validation repeats the sequence of fold values ($1, \dots, K, 1, \dots, K, \dots$), to obtain an $N$-vector which is then randomly shuffled.
+This guarantees approximately the same number of observations in each fold (at most one row difference, when $N/K$ is not an integer).
+For the AZtrees example, this results in either 1986 or 1985 rows Total per fold (Table~\ref{tab:counts} Case A Total).
 
 \begin{table}[ht]
   \centering
@@ -110,9 +78,60 @@ E)&yes strata&Positive &  \textbf{225} & \textbf{224} & \textbf{225} &  39 &  39
 &(proposed)&Total &  \textbf{1986} & \textbf{1985} & \textbf{1985} &  58 &  65 &  66 &  &  &  &  \\ 
    \hline
 \end{tabular}
-\caption{Demonstration of trivial and proposed algorithms for five cases of $K=3$ fold cross-validation in AZtrees data, with $N=5956$ rows, $G=189$ groups, and $S=2$ strata (same as binary label $y$).
+\caption{
+  \label{tab:counts}
+  Demonstration of trivial and proposed algorithms for five cases of $K=3$ fold cross-validation in AZtrees data, with $N=5956$ rows, $G=189$ groups, and $S=2$ strata (same as binary label $y$).
   The proposed algorithm with stratification and groups (case E) gives nearly equal data counts across folds (\textbf{bold}), and no leakage (empty entries in the right columns, meaning zero groups assigned to multiple folds).
 }
+\end{table}
+
+However, the random shuffling in unstructured cross-validation can cause substantial variation between class frequencies.
+For the AZtrees example, one random shuffle gave 237 Positive rows in fold 1, and 213 Negative rows in fold 3 (Table~\ref{tab:counts} Case A Negative and Positive).
+To get class frequencies that are approximately equal across folds (at most one row different), cross-validation can be stratified using the class.
+For each stratum/class with $c$ rows, we repeat the fold values ($1, \dots, K, 1, \dots, K, \dots$), to obtain a $c$-vector, then assign the shuffled fold values to the rows in that class/stratum.
+For the AZtrees example, stratification results in 1760--1761 negative rows per fold, and 224--225 positive rows per fold.
+(Table~\ref{tab:counts} Case B Negative and Positive).
+
+In a structured data set with a grouping variable, the data-splitting technique should work on groups instead of rows, to avoid data leakage (TODO citation).
+For example, the AZtrees data were created by drawing polygons on a map (TODO citation).
+Each polygon represents an area of the map labeled as positive or negative, and all pixels in the polygon are assigned the corresponding class label.
+By treating each polygon as an atomic group, we can avoid splitting some pixels of a polygon to the train set, and other pixels from that polygon to the test set (data leakage), which would result in over-optimistic estimates of test error rates.
+Using cross-validation without groups in the AZtrees data results in data leakage: some groups are randomly assigned to multiple folds (Table~\ref{tab:counts} Cases A and B, 1--104 groups in multiple folds).
+To modify cross-validation for a data set with $G$ groups, we repeat the fold values ($1, \dots, K, 1, \dots, K, \dots$), to obtain a $G$-vector, which is randomly shuffled to assign each group to a fold.
+Grouped cross-validation always results in approximately the same number of groups in each fold (max difference of 1 group if $G/K$ is not an integer).
+The AZtrees data has $G=189$ groups, so grouped cross-validation with $K=3$ folds results in $G/K=63$ groups per fold (Table~\ref{tab:counts} Case C Total).
+
+However, simple grouped cross-validation only ensures approximately equal numbers of groups (not rows) across folds, so each fold can have very different row counts.
+In the AZtrees example, one random shuffle gave 1253--2577 rows per fold (Table~\ref{tab:counts} Case C Total).
+Furthermor, simple grouped cross-validation does not perform stratification, so each fold can have very different class frequencies.
+In the AZtrees example, one random shuffle gave 167--320 positive rows per fold, and 1066--2410 negative rows per fold (Table~\ref{tab:counts} Case C Negative and Positive).
+Is there a method that can handle stratification and grouping?
+An ideal method would have the same class frequencies in each fold, and no data leakage (Table~\ref{tab:counts} Case E).
+
+\subsection{Proposed algorithm and issues with previous algorithm}
+
+This paper proposes a new heuristic algorithm which performs greedy minimization of the difference between expected and ideal row counts across folds, while respecting the group constraint to avoid data leakage.
+In the AZtrees data, one random run of the proposed heuristic without stratification gave 1985--1986 rows per fold, 1723--1803 negative labels per fold, 183--262 positive labels per fold, and no data leakage (Table~\ref{tab:counts} Case D).
+In the AZtrees data, one random run of the proposed heuristic with stratification gave 1985--1986 rows per fold, 1760--1761 negative labels per fold, 224--225 positive labels per fold, and no data leakage (Table~\ref{tab:counts} Case E).
+
+Our proposed heuristic is inspired by previous work by a Kaggle competitor, who proposed a different heuristic algorithm, based on minimizing the variance between data counts in each fold \citep{Wasikowski2019}.
+We refer to this algorithm as the Wasikowski heuristic, which is used in the StratifiedGroupKFold class, available in scikit-learn since version 0.24.2 (2020).
+However, close inspection of the Wasikowski heuristic reveals that it is relatively inefficient, $O(K^2 G S)$ time and $O(GS)$ memory for $K$ folds, $G$ groups, and $S$ strata (Table~\ref{tab:complexity}).
+The quadratic time complexity can be prohibitive for a large number of folds $K$, and the memory complexity can be prohibitive if both $G$ and $S$ are large.
+This paper proposes new heuristic algorithms with reduced time and memory complexity (Table~\ref{tab:complexity}).
+
+\begin{table}[t]
+  \centering
+  \begin{tabular}{c|c|l}
+    Algorithm &  Time    & Memory \\
+    \hline
+    Wasikowski & $O(N\log N + K^2GS)$ & $O(N + SK+SG)$\\
+    Wasikowski-L (proposed) & $O(N\log N + K^2GS)$ & $O(N + SK)$\\
+    % MinRSS (proposed) & $O(N + KGS)$  & $O(N + SK + SG)$\\
+        MinRSS (proposed) & $O(N\log N + KGS)$  & $O(N + SK)$
+    \end{tabular}
+    \caption{Time and memory complexity for computing $K$-fold cross-validation assignment, given $N$ data rows in $S$ strata and $G$ groups.}
+    \label{tab:complexity}
 \end{table}
 
 \subsection{Contributions}
@@ -127,6 +146,22 @@ Proposed RSS minimization algorithm which is asymptotically faster: previous qua
 Systematic comparisons with 8 previous software packages, in terms of features and fold assignment accuracy.
 
 \section{Related Work}
+
+Similar to 
+\url{https://en.wikipedia.org/wiki/Bin_packing_problem}
+but with a fixed number of bins.
+
+Quoting from that article:
+``In the bin packing problem, the size of the bins is fixed and their number can be enlarged (but should be as small as possible).
+In the multiway number partitioning problem, \url{https://en.wikipedia.org/wiki/Multiway_number_partitioning} the number of bins is fixed and their size can be enlarged.''
+\citet{Pop2013} proposed a heuristic (genetic algorithm and local search) to solve this multidimensional multi-way number partitioning problem.
+
+\citet{hayes2002computing} called it the ``easiest hard problem'' and discussed the example of picking team members in a game like soccer. 
+
+
+A typical application of stratification is in classification problems, where the stratum variable is defined as the same as the label/output variable to predict.
+Other strata variables correspond to the domain/subset, when evaluating domain adaptation algorithms (TODO citation), and when estimating similarity of data subsets for learning purposes \citep{Hocking2026soak}.
+
 
 Wasikowski (sklearn.model\_selection.StratifiedGroupKFold)
 
@@ -358,19 +393,6 @@ stratify: logical, keep outcome proportions similar across folds. For
           (by majority class per group) if 'outcome' is provided;
           otherwise ignored.
           
-\begin{table}[t]
-  \centering
-  \begin{tabular}{c|c|l}
-    Algorithm &  Time    & Memory \\
-    \hline
-    Wasikowski & $O(N\log N + K^2GS)$ & $O(N + SK+SG)$\\
-    Wasikowski-L (proposed) & $O(N\log N + K^2GS)$ & $O(N + SK)$\\
-    % MinRSS (proposed) & $O(N + KGS)$  & $O(N + SK + SG)$\\
-        MinRSS (proposed) & $O(N\log N + KGS)$  & $O(N + SK)$
-    \end{tabular}
-    \caption{Time and memory complexity for computing $K$-fold cross-validation assignment, given $N$ data rows in $S$ strata and $G$ groups.}
-    \label{tab:complexity}
-\end{table}
 
 \subsection{Implementation details}
 We implemented our proposed algorithms in C++ for time and memory efficiency in large data.
@@ -378,6 +400,12 @@ TODO
 \section{Results}
 
 \subsection{Data sets}
+
+Medical data (respiratory in R), each patient is a group.
+
+Satellite image segmentation, each labeled region is a group.
+
+Pet adoption data, each rescuer is a group.
 
 \subsection{Algorithms}
 
@@ -438,6 +466,7 @@ Laribi2024 & 248,485 & 123,646 & 1–30 &   2 & 1–2 \\
 
 Other loss functions like max norm objective in \citet{Pop2013}.
 
+Can used at the same time as subset role \citep{Hocking2026soak}.
 \bibliographystyle{abbrvnat}
 \bibliography{refs}
 
