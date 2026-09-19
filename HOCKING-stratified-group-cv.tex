@@ -46,7 +46,7 @@ For example, consider the AZtrees data \citep{Hocking2026soak}, which represent 
 There are $N=5956$ rows, each representing a pixel in an image that has been labeled as containing a tree (positive class) or not (background negative class), so in $K=3$ fold cross-validation, we expect each fold to have approximately $N/K=1985.33$ rows.
 Standard unstructured cross-validation repeats the sequence of fold values ($1, \dots, K, 1, \dots, K, \dots$), to obtain an $N$-vector which is then randomly shuffled.
 This guarantees approximately the same number of observations in each fold (at most one row difference, when $N/K$ is not an integer).
-For the AZtrees example, this results in either 1986 or 1985 rows Total per fold (Table~\ref{tab:counts} Case A Total).
+For the AZtrees example, this results in 1985--1986 rows per fold (Table~\ref{tab:counts} Case A Total).
 
 \begin{table}[ht]
   \centering
@@ -85,8 +85,8 @@ E)&yes strata&Positive &  \textbf{225} & \textbf{224} & \textbf{225} &  39 &  39
 }
 \end{table}
 
-However, the random shuffling in unstructured cross-validation can cause substantial variation between class frequencies.
-For the AZtrees example, one random shuffle gave 237 Positive rows in fold 1, and 213 Negative rows in fold 3 (Table~\ref{tab:counts} Case A Negative and Positive).
+However, the random shuffling in unstructured cross-validation can cause substantial variation between class frequencies, which is undesirable.
+For the AZtrees example, one random shuffle gave 1749--1772 Negative rows and 213--237 Positive rows (Table~\ref{tab:counts} Case A Negative and Positive).
 To get class frequencies that are approximately equal across folds (at most one row different), cross-validation can be stratified using the class.
 For each stratum/class with $c$ rows, we repeat the fold values ($1, \dots, K, 1, \dots, K, \dots$), to obtain a $c$-vector, then assign the shuffled fold values to the rows in that class/stratum.
 For the AZtrees example, stratification results in 1760--1761 negative rows per fold, and 224--225 positive rows per fold.
@@ -103,7 +103,7 @@ The AZtrees data has $G=189$ groups, so grouped cross-validation with $K=3$ fold
 
 However, simple grouped cross-validation only ensures approximately equal numbers of groups (not rows) across folds, so each fold can have very different row counts.
 In the AZtrees example, one random shuffle gave 1253--2577 rows per fold (Table~\ref{tab:counts} Case C Total).
-Furthermor, simple grouped cross-validation does not perform stratification, so each fold can have very different class frequencies.
+Furthermore, simple grouped cross-validation does not perform stratification, so each fold can have very different class frequencies.
 In the AZtrees example, one random shuffle gave 167--320 positive rows per fold, and 1066--2410 negative rows per fold (Table~\ref{tab:counts} Case C Negative and Positive).
 Is there a method that can handle stratification and grouping?
 An ideal method would have the same class frequencies in each fold, and no data leakage (Table~\ref{tab:counts} Case E).
@@ -112,23 +112,22 @@ An ideal method would have the same class frequencies in each fold, and no data 
 
 This paper proposes a new heuristic algorithm which performs greedy minimization of the difference between expected and ideal row counts across folds, while respecting the group constraint to avoid data leakage.
 In the AZtrees data, one random run of the proposed heuristic without stratification gave 1985--1986 rows per fold, 1723--1803 negative labels per fold, 183--262 positive labels per fold, and no data leakage (Table~\ref{tab:counts} Case D).
-In the AZtrees data, one random run of the proposed heuristic with stratification gave 1985--1986 rows per fold, 1760--1761 negative labels per fold, 224--225 positive labels per fold, and no data leakage (Table~\ref{tab:counts} Case E).
+With stratification, the proposed heuristic gave an ideal result: 1985--1986 rows per fold, 1760--1761 negative labels per fold, 224--225 positive labels per fold, and no data leakage (Table~\ref{tab:counts} Case E).
 
-Our proposed heuristic is inspired by previous work by a Kaggle competitor, who proposed a different heuristic algorithm, based on minimizing the variance between data counts in each fold \citep{Wasikowski2019}.
-We refer to this algorithm as the Wasikowski heuristic, which is used in the StratifiedGroupKFold class, available in scikit-learn since version 0.24.2 (2020).
-However, close inspection of the Wasikowski heuristic reveals that it is relatively inefficient, $O(K^2 G S)$ time and $O(GS)$ memory for $K$ folds, $G$ groups, and $S$ strata (Table~\ref{tab:complexity}).
-The quadratic time complexity can be prohibitive for a large number of folds $K$, and the memory complexity can be prohibitive if both $G$ and $S$ are large.
-This paper proposes new heuristic algorithms with reduced time and memory complexity (Table~\ref{tab:complexity}).
+Our proposed heuristic is inspired by previous work by a Kaggle competitor, who proposed a different heuristic algorithm, based on minimizing the variance between row counts in each fold \citep{Wasikowski2019}.
+We refer to this previous algorithm as the Wasikowski heuristic, which is used in the StratifiedGroupKFold class, available in scikit-learn since version 0.24.2 (2020).
+However, close inspection of the Wasikowski heuristic reveals that it is relatively inefficient, $O(K^2 SG)$ time and $O(SG)$ memory for $K$ folds, $G$ groups, and $S$ strata (Table~\ref{tab:complexity}).
+The quadratic time complexity can be prohibitive for a large number of folds $K$, and the memory complexity can be prohibitive if both $S$ and $G$ are large.
+This paper proposes new heuristic algorithms with reduced asymptotic time and memory complexity (Table~\ref{tab:complexity}).
 
 \begin{table}[t]
   \centering
-  \begin{tabular}{c|c|l}
+  \begin{tabular}{l|l|l}
     Algorithm &  Time    & Memory \\
     \hline
-    Wasikowski & $O(N\log N + K^2GS)$ & $O(N + SK+SG)$\\
-    Wasikowski-L (proposed) & $O(N\log N + K^2GS)$ & $O(N + SK)$\\
-    % MinRSS (proposed) & $O(N + KGS)$  & $O(N + SK + SG)$\\
-        MinRSS (proposed) & $O(N\log N + KGS)$  & $O(N + SK)$
+    Wasikowski & $O(N\log N + K^2SG)$ & $O(N + KS + SG)$\\
+    Wasikowski-L (proposed) & $O(N\log N + K^2SG)$ & $O(N + KS)$\\
+        MinRSS (proposed) & $O(N\log N + KSG)$  & $O(N + KS)$
     \end{tabular}
     \caption{Time and memory complexity for computing $K$-fold cross-validation assignment, given $N$ data rows in $S$ strata and $G$ groups.}
     \label{tab:complexity}
@@ -143,7 +142,7 @@ Drops a potentially large $O(SG)$ term from memory complexity.
 
 Proposed RSS minimization algorithm which is asymptotically faster: previous quadratic time in number of folds $K$ is reduced to linear time.
 
-Systematic comparisons with 8 previous software packages, in terms of features and fold assignment accuracy.
+Systematic comparisons with 8 previous software packages, in terms of features, empirical fold assignment accuracy and computation time in 4 real data sets.
 
 \section{Related Work}
 
@@ -439,7 +438,7 @@ We also ran three other R packages with functions for computing fold assignment 
       \input{Laribi2024-figure-rows-small-input}
     }
     \vspace{-0.4in}
-    \caption{Empirical timings of previous and proposed algorithms, implemented in C++ code, run on Laribi2024 data (colored curves for mean, shaded band for min/max).
+    \caption{Empirical timings of the greedy fold assignment step of the previous and proposed algorithms, implemented in C++ code, run on Laribi2024 data (colored curves for mean, shaded band for min/max over 10 timings).
       \textbf{Left:} timings as number of folds $K$ increases. Asymptotic reference curves (black), fit to largest empirical $K$ values, indicate that previous Wasikowski is $O(K^2)$, and proposed RSS is $O(K)$, as expected.
     \textbf{Right:} timings as number of data $N$ increases shows that RSS is $\approx 10$ times faster asymptotically.  }
     \label{fig:Laribi-refs}
