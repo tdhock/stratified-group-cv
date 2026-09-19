@@ -319,22 +319,26 @@ The five groups are [ 1, 3 ],  [ 1, 2 ],  [ 0, 2 ],  [ 1, 1 ],  [ 0, 1 ], which 
 For these data, the previous method can result in sub-optimal assignment (depending on random tie-breaking).
 In contrast the proposed RSS minimization always obtains optimal assignment in these data.
 
-\begin{verbatim}
-   counts  fold   rss fold1 fold2 fold3
-1:    1,3     1     0   1,3
-2:    1,2     2     1   1,3   1,2
-3:    0,2     3     2   1,3   1,2   0,2
-4:    1,1     3     4   1,3   1,2   1,3
-5:    0,1     2     5   1,3   1,3   1,3
-total 3,9
-ideal 1,3
-   counts  fold   var fold1 fold2 fold3
-1:    0,2     1   2.0   0,2
-2:    1,3     2   2.0   0,2   1,3
-3:    1,2     3   0.5   0,2   1,3   1,2
-4:    0,1     1   0.5   0,3   1,3   1,2
-5:    1,1     1   0.0   1,4   1,3   1,2
-\end{verbatim}
+\begin{table}[t]
+  \centering
+  \begin{tabular}{c|cccccc|cccccc}
+    &\multicolumn{6}{c|}{Proposed: sort RSS increasing, min RSS}&\multicolumn{6}{c}{Previous: sort Var decreasing, min Var}\\
+             &counts&     &      &\multicolumn{3}{c|}{total counts in}&counts&&  &\multicolumn{3}{c}{total counts in}\\
+    iteration&in group&  fold&   RSS& fold1& fold2& fold3&in group&  fold&   var& fold1& fold2& fold3\\
+    \hline
+1&    1,3&     1&     0&   1,3&&&0,2&     1&   2.0&   0,2&&\\
+2&    1,2&     2&     1&   1,3&&   1,2&1,3&     2&   2.0&   0,2&   1,3&\\
+3&    0,2&     3&     2&   1,3&   1,2&   0,2&1,2&     3&   0.5&   0,2&   1,3&   1,2\\
+4&    1,1&     3&     4&   1,3&   1,2&   1,3&0,1&     1&   0.5&   0,3&   1,3&   1,2\\
+5&    0,1&     2&     5&   1,3&   1,3&   1,3&1,1&     1&   0.0&   1,4&   1,3&   1,2
+  \end{tabular}
+  \caption{
+    Demonstration of proposed algorithm with $N=12$ rows, $G=5$ groups, $S=2$ strata, and $K=3$ folds.
+    Counts columns show numbers of rows per stratum, for example 1,3 means 1 rows in first stratum and 3 rows in second stratum.
+    The proposed greedy RSS minimization works to compute an ideal fold assignment (total counts 1,3 in each fold), but previous variance minimization does not.}
+  \label{tab:rss-var}
+\end{table}
+
 
 \subsection{Tie-breaking}
 
