@@ -40,7 +40,14 @@ The resulting $K$ measurements of prediction error on the test sets are used to 
 
 \subsection{Issues with unstructured cross-validation in structured data}
 
-\subsubsection{No stratification, no groups}
+This paper proposes a new algorithm for cross-validation in machine learning data sets with two kinds of structure: groups and strata.
+Groups are observations that should stay together when splitting, to avoid data leakage, which can cause over-optimistic estimates of prediction error rates (TODO citation).
+Examples of groups include medical records for the same patient (in diagnostic/prognostic prediction problems), and pixels labeled from the same polygon (in image segmentation problems).
+Strata are classes of observations for which the relative proportions should be preserved when splitting.
+Examples of strata include the output label in classification problems, and the domain/subset variable in domain adapation evaluation (TODO citation).
+To understand why our proposed algorithm is useful, we first discuss the issues that arise when unstructured cross-validation is used in structured data.
+
+\subsubsection{Cross-validation with neither stratification nor groups}
 
 Because the goal of data-splitting is to estimate prediction error in the same distributional setting as the original data set, it is important for the splitting procedure to generate train/test sets which are representative of the original data.
 In an unstructured data set, we would at least like to ensure that each test set has the same number of observations.
@@ -87,7 +94,7 @@ E)&yes strata&Positive &  \textbf{225} & \textbf{224} & \textbf{225} &  39 &  39
 }
 \end{table}
 
-\subsubsection{Stratification, no groups}
+\subsubsection{Cross-validation with stratification but no groups}
 
 However, the random shuffling in unstructured cross-validation can cause substantial variation between class frequencies, which is undesirable.
 For the AZtrees example, one random shuffle gave 1749--1772 Negative rows and 213--237 Positive rows (Table~\ref{tab:counts} Case A Negative and Positive).
@@ -96,7 +103,7 @@ For a stratum/class with $c$ rows, we repeat the fold values ($1, \dots, K, 1, \
 For the AZtrees example, stratification results in 1760--1761 negative rows per fold, and 224--225 positive rows per fold.
 (Table~\ref{tab:counts} Case B Negative and Positive).
 
-\subsubsection{Groups, no stratification}
+\subsubsection{Cross-validation with groups but no stratification}
 
 In a structured data set with a grouping variable, the data-splitting technique should work on groups instead of rows, to avoid data leakage (TODO citation).
 For example, the AZtrees data were created by drawing polygons on a map (TODO citation).
@@ -115,7 +122,7 @@ In the AZtrees example, one random shuffle gave 167--320 positive rows per fold,
 Is there a method that can handle stratification and grouping?
 An ideal method would have the same class frequencies in each fold, and no data leakage (Table~\ref{tab:counts} Case E).
 
-\subsection{Proposed algorithm and issues with previous algorithm}
+\subsection{Proposed algorithm for cross-validation with stratification and grous}
 
 This paper proposes a new heuristic algorithm which performs greedy minimization of the difference between expected and ideal row counts across folds, while respecting the group constraint to avoid data leakage.
 In the AZtrees data, one random run of the proposed heuristic without stratification gave 1985--1986 rows per fold, 1723--1803 negative labels per fold, 183--262 positive labels per fold, and no data leakage (Table~\ref{tab:counts} Case D).
@@ -202,10 +209,12 @@ soakpy&no&no&yes& none&no&no&no\\
   }
   \label{tab:related}
 \end{table}
-\section{Proposed Methods}
+\section{Previous and proposed algorithms}
 
 Assume we have a data set with $N$ rows in $S$ strata and $G$ groups.
 We want to perform $K$-fold cross-validation, such that data in each group are assigned the same fold ID, and the strata proportions in each fold are approximately equal.
+
+\subsection{Analysis of previous Wasikowski heuristic algorithm}
 
 \subsection{Online counting algorithm for reduced memory complexity}
 
@@ -424,6 +433,38 @@ We also ran three other R packages with functions for computing fold assignment 
 \end{itemize}
 
 
+\begin{table}[ht]
+\centering
+\begin{tabular}{lr|rr|rrrrr}
+  \hline
+  &Data: & \multicolumn{2}{c|}{Laribi2024}& \multicolumn{5}{c}{PetAdoption}\\ 
+  & & \multicolumn{2}{c|}{row counts in}& \multicolumn{5}{c}{row counts in}\\
+algorithm & fold & s1 & s2 & s1 & s2 & s3 & s4 & s5 \\ 
+  \hline
+  ideal &  & 9176.25 & 52945 & 102.5 & 772.5 & 814.75 & 1009.25 & 1049.25 \\ 
+  \hline
+  RSS &   1 & 9177\textcolor{white}{.00} & \textcolor{red}{52945} & 102\textcolor{white}{.0} & 772\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1050}\textcolor{white}{.00} \\ 
+  (proposed) &   2 & 9176\textcolor{white}{.00} & \textcolor{red}{52945} & 103\textcolor{white}{.0} & 772\textcolor{white}{.0} & 814\textcolor{white}{.00} & 1010\textcolor{white}{.00} & \textcolor{red}{1049}\textcolor{white}{.00} \\ 
+   &   3 & 9176\textcolor{white}{.00} & \textcolor{red}{52945} & 103\textcolor{white}{.0} & 773\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1049}\textcolor{white}{.00} \\ 
+   &   4 & 9176\textcolor{white}{.00} & \textcolor{red}{52945} & 102\textcolor{white}{.0} & 773\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1049}\textcolor{white}{.00} \\ 
+  \hline
+  Wasikowski &   1 & 9176\textcolor{white}{.00} & \textcolor{red}{52946} & 103\textcolor{white}{.0} & 773\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1010\textcolor{white}{.00} & \textcolor{red}{1047}\textcolor{white}{.00} \\ 
+  (previous) &   2 & 9176\textcolor{white}{.00} & \textcolor{red}{52945} & 103\textcolor{white}{.0} & 773\textcolor{white}{.0} & 814\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1050}\textcolor{white}{.00} \\ 
+   &   3 & 9177\textcolor{white}{.00} & \textcolor{red}{52945} & 102\textcolor{white}{.0} & 772\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1050}\textcolor{white}{.00} \\ 
+   &   4 & 9176\textcolor{white}{.00} & \textcolor{red}{52944} & 102\textcolor{white}{.0} & 772\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1050}\textcolor{white}{.00} \\ 
+  \hline
+  random &   1 & 9121\textcolor{white}{.00} & 53107 & 106\textcolor{white}{.0} & 869\textcolor{white}{.0} & 955\textcolor{white}{.00} & 1217\textcolor{white}{.00} & 1079\textcolor{white}{.00} \\ 
+   &   2 & 9263\textcolor{white}{.00} & 53186 &  99\textcolor{white}{.0} & 826\textcolor{white}{.0} & 922\textcolor{white}{.00} & 1079\textcolor{white}{.00} & 1153\textcolor{white}{.00} \\ 
+   &   3 & 9111\textcolor{white}{.00} & 52800 & 113\textcolor{white}{.0} & 738\textcolor{white}{.0} & 641\textcolor{white}{.00} &  853\textcolor{white}{.00} &  985\textcolor{white}{.00} \\ 
+   &   4 & 9210\textcolor{white}{.00} & 52687 &  92\textcolor{white}{.0} & 657\textcolor{white}{.0} & 741\textcolor{white}{.00} &  888\textcolor{white}{.00} &  980\textcolor{white}{.00} \\ 
+  \hline
+\end{tabular}
+\caption{
+  \label{tab:counts}
+  Typical results on real data TODO
+}
+\end{table}
+
 \begin{figure}[t]
     \centering
     % github.com/tdhock/stratified-group-cv several_Tasks.R
@@ -452,21 +493,21 @@ We also ran three other R packages with functions for computing fold assignment 
 \end{figure}
 
 
-\begin{table}[t]
-    \centering
-\begin{tabular}{lrrrrr}
-  \hline
-Data & Rows & Groups & Rows/Group & Strata & Strata/Group \\ 
-  \hline
-Laribi2024 & 248,485 & 123,646 & 1–30 &   2 & 1–2 \\ 
-  PetAdoption & 14,993 & 5,595 & 1–459 &   5 & 1–5 \\ 
-  AZtrees & 5,956 & 189 & 1–1,478 &   2 & 1 \\ 
-  respiratory & 444 & 111 & 4 &   2 & 1–2 \\ 
-   \hline
-    \end{tabular}
-    \caption{Remove because redundant with figure?}
-    \label{tab:placeholder}
-\end{table}
+% \begin{table}[t]
+%     \centering
+% \begin{tabular}{lrrrrr}
+%   \hline
+% Data & Rows & Groups & Rows/Group & Strata & Strata/Group \\ 
+%   \hline
+% Laribi2024 & 248,485 & 123,646 & 1–30 &   2 & 1–2 \\ 
+%   PetAdoption & 14,993 & 5,595 & 1–459 &   5 & 1–5 \\ 
+%   AZtrees & 5,956 & 189 & 1–1,478 &   2 & 1 \\ 
+%   respiratory & 444 & 111 & 4 &   2 & 1–2 \\ 
+%    \hline
+%     \end{tabular}
+%     \caption{Remove because redundant with figure?}
+%     \label{tab:placeholder}
+% \end{table}
 
 \section{Conclusions}
 
