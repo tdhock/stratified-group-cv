@@ -7,6 +7,9 @@ list2dt <- function(fold_list, set_name){
   }, by=fold]
 }
 result.dt.list <- list()
+data.i <- 2
+folds=4
+algo="RSS"
 for(data.i in seq_along(data.csv.vec)){
   data.csv <- data.csv.vec[[data.i]]
   data.name <- gsub("data/|.csv", "", data.csv)

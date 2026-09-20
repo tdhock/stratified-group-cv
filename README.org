@@ -13,6 +13,20 @@ Abstract:
   We propose a new heuristic algorithm with asymptotically less time and memory usage, that can be used on large data sets.
   In an empirical analysis of four real data sets, the proposed algorithm provides comparable fold assignments, and is at least ten times faster than the previous algorithm.
 
+** 20 Sept 2026
+
+[[file:several_Tasks_table_data.R]] makes [[file:several_Tasks_table_data.csv]]
+
+[[file:several_Tasks_table.R]] reads that and outputs LaTeX table for paper (typical counts, 4 fold CV).
+
+[[file:figure_atime_cpp_data.R]] makes [[file:figure_atime_cpp_data.rds]]
+
+[[file:figure_atime_cpp.R]] reads that and makes
+
+[[file:figure_atime_cpp.png]]
+
+We see that computing the sorting statistics is more than 10x faster in C++ compared to R.
+
 ** 3 June 2026
 
 Added code in [[file:data.R]]  to download [[file:Laribi2024full.csv]] from https://zenodo.org/records/12954673
