@@ -1,4 +1,5 @@
-\documentclass{article}
+\documentclass[twoside]{article}
+\usepackage{aistats2027}
 \usepackage{tikz}
 \usepackage{multirow}
 \usepackage{graphicx} % Required for inserting images
@@ -6,8 +7,8 @@
 \usepackage{hyperref} % Required for inserting images
 \usepackage{amsmath}
 \usepackage{natbib}
-\title{%Reduced asymptotic efficiency of
-  Efficient cross-validation with groups and stratification}
+% \title{%Reduced asymptotic efficiency of
+%   Efficient cross-validation with groups and stratification}
 \author{Toby Hocking}
 \date{April 2026}
 
@@ -15,7 +16,13 @@
 \DeclareMathOperator*{\argmax}{arg\, max} 
 \begin{document}
 
-\maketitle
+\twocolumn[
+
+\aistatstitle{Efficient cross-validation with groups and stratification}
+
+\aistatsauthor{ Toby Dylan Hocking }
+
+\aistatsaddress{ Université de Sherbrooke } ]
 
 \begin{abstract}
   Cross-validation is used throughout machine learning for model training and evaluation.
@@ -29,35 +36,7 @@
 
 \section{Introduction}
 
-Many types of modern artificially intelligent systems are powered by machine learning: image classification, medical diagnosis/prognosis, automatic translation, etc.
-$K$-fold cross-validation (TODO citation) is a fundamental data-splitting technique that is used for both training (tuning hyper-parameters of a learning algorithm) and evaluation (comparing prediction accuracy of different learning algorithms).
-In a data set of $N$ observations, $K$-fold cross-validation involves assigning a fold ID (integer between 1 and $K$) to each of the $N$ observations.
-For each fold ID from 1 to $K$, the corresponding observations form a test set, and the other observations form a train set (for the case of evaluation).
-Learning algorithms are fit to each train set, then prediction error rates are computed on the corresponding test set.
-The resulting $K$ measurements of prediction error on the test sets are used to estimate how the learning algorithm would perform on new data from the same distribution.
-
-%TODO different kinds of data, Motivation for stratification and grouping
-
-\subsection{Issues with unstructured cross-validation in structured data}
-
-This paper proposes a new algorithm for cross-validation in machine learning data sets with two kinds of structure: groups and strata.
-Groups are observations that should stay together when splitting, to avoid data leakage, which can cause over-optimistic estimates of prediction error rates (TODO citation).
-Examples of groups include medical records for the same patient (in diagnostic/prognostic prediction problems), and pixels labeled from the same polygon (in image segmentation problems).
-Strata are classes of observations for which the relative proportions should be preserved when splitting.
-Examples of strata include the output label in classification problems, and the domain/subset variable in domain adapation evaluation (TODO citation).
-To understand why our proposed algorithm is useful, we first discuss the issues that arise when unstructured cross-validation is used in structured data.
-
-\subsubsection{Cross-validation with neither stratification nor groups}
-
-Because the goal of data-splitting is to estimate prediction error in the same distributional setting as the original data set, it is important for the splitting procedure to generate train/test sets which are representative of the original data.
-In an unstructured data set, we would at least like to ensure that each test set has the same number of observations.
-For example, consider the AZtrees data \citep{Hocking2026soak}, which represent an image segmentation problem.
-There are $N=5956$ rows, each representing a pixel in an image that has been labeled as containing a tree (positive class) or not (background negative class), so in $K=3$ fold cross-validation, we expect each fold to have approximately $N/K=1985.33$ rows.
-Standard unstructured cross-validation repeats the sequence of fold values ($1, \dots, K, 1, \dots, K, \dots$), to obtain an $N$-vector which is then randomly shuffled.
-This guarantees approximately the same number of observations in each fold (at most one row difference, when $N/K$ is not an integer).
-For the AZtrees example, this results in 1985--1986 rows per fold (Table~\ref{tab:counts} Case A Total).
-
-\begin{table}[ht]
+\begin{table*}[t]
   \centering
   % tdhock/stratified-group-cv/table-AZtrees.R
 \begin{tabular}{|cc|r|rrr|rrr|rrrr|}
@@ -92,7 +71,48 @@ E)&yes strata&Positive &  \textbf{225} & \textbf{224} & \textbf{225} &  39 &  39
   Demonstration of trivial and proposed algorithms for five cases of $K=3$ fold cross-validation in AZtrees data, with $N=5956$ rows, $G=189$ groups, and $S=2$ strata (same as binary label $y$).
   The proposed algorithm with stratification and groups (case E) gives nearly equal data counts across folds (\textbf{bold}), and no leakage (empty entries in the right columns, meaning zero groups assigned to multiple folds).
 }
-\end{table}
+\end{table*}
+
+Many types of modern artificially intelligent systems are powered by machine learning: image classification, medical diagnosis/prognosis, automatic translation, etc.
+$K$-fold cross-validation (TODO citation) is a fundamental data-splitting technique that is used for both training (tuning hyper-parameters of a learning algorithm) and evaluation (comparing prediction accuracy of different learning algorithms).
+In a data set of $N$ observations, $K$-fold cross-validation involves assigning a fold ID (integer between 1 and $K$) to each of the $N$ observations.
+For each fold ID from 1 to $K$, the corresponding observations form a test set, and the other observations form a train set (for the case of evaluation).
+Learning algorithms are fit to each train set, then prediction error rates are computed on the corresponding test set.
+The resulting $K$ measurements of prediction error on the test sets are used to estimate how the learning algorithm would perform on new data from the same distribution.
+
+%TODO different kinds of data, Motivation for stratification and grouping
+
+\subsection{Issues with unstructured cross-validation in structured data}
+
+This paper proposes a new algorithm for cross-validation in machine learning data sets with two kinds of structure: groups and strata.
+Groups are observations that should stay together when splitting, to avoid data leakage, which can cause over-optimistic estimates of prediction error rates (TODO citation).
+Examples of groups include medical records for the same patient (in diagnostic/prognostic prediction problems), and pixels labeled from the same polygon (in image segmentation problems).
+Strata are classes of observations for which the relative proportions should be preserved when splitting.
+Examples of strata include the output label in classification problems, and the domain/subset variable in domain adapation evaluation (TODO citation).
+To understand why our proposed algorithm is useful, we first discuss the issues that arise when unstructured cross-validation is used in structured data.
+
+\subsubsection{Cross-validation with neither stratification nor groups}
+
+Because the goal of data-splitting is to estimate prediction error in the same distributional setting as the original data set, it is important for the splitting procedure to generate train/test sets which are representative of the original data.
+In an unstructured data set, we would at least like to ensure that each test set has the same number of observations.
+For example, consider the AZtrees data \citep{Hocking2026soak}, which represent an image segmentation problem.
+There are $N=5956$ rows, each representing a pixel in an image that has been labeled as containing a tree (positive class) or not (background negative class), so in $K=3$ fold cross-validation, we expect each fold to have approximately $N/K=1985.33$ rows.
+Standard unstructured cross-validation repeats the sequence of fold values ($1, \dots, K, 1, \dots, K, \dots$), to obtain an $N$-vector which is then randomly shuffled.
+This guarantees approximately the same number of observations in each fold (at most one row difference, when $N/K$ is not an integer).
+For the AZtrees example, this results in 1985--1986 rows per fold (Table~\ref{tab:counts} Case A Total).
+
+\begin{table*}[t]
+  \centering
+  \begin{tabular}{l|l|l}
+    Algorithm &  Time    & Memory \\
+    \hline
+    Wasikowski & $O(N\log N + K^2SG)$ & $O(N + KS + SG)$\\
+    Wasikowski-L (proposed) & $O(N\log N + K^2SG)$ & $O(N + KS)$\\
+        MinRSS (proposed) & $O(N\log N + KSG)$  & $O(N + KS)$
+    \end{tabular}
+    \caption{Time and memory complexity for computing $K$-fold cross-validation assignment, given $N$ data rows in $S$ strata and $G$ groups.}
+    \label{tab:complexity}
+\end{table*}
 
 \subsubsection{Cross-validation with stratification but no groups}
 
@@ -134,18 +154,6 @@ However, close inspection of the Wasikowski heuristic reveals that it is relativ
 The quadratic time complexity can be prohibitive for a large number of folds $K$, and the memory complexity can be prohibitive if both $S$ and $G$ are large.
 This paper proposes new heuristic algorithms with reduced asymptotic time and memory complexity (Table~\ref{tab:complexity}).
 
-\begin{table}[t]
-  \centering
-  \begin{tabular}{l|l|l}
-    Algorithm &  Time    & Memory \\
-    \hline
-    Wasikowski & $O(N\log N + K^2SG)$ & $O(N + KS + SG)$\\
-    Wasikowski-L (proposed) & $O(N\log N + K^2SG)$ & $O(N + KS)$\\
-        MinRSS (proposed) & $O(N\log N + KSG)$  & $O(N + KS)$
-    \end{tabular}
-    \caption{Time and memory complexity for computing $K$-fold cross-validation assignment, given $N$ data rows in $S$ strata and $G$ groups.}
-    \label{tab:complexity}
-\end{table}
 
 \subsection{Contributions}
 
@@ -184,31 +192,32 @@ TODO discuss all methods in Table~\ref{tab:related}.
 
 mlr3/caret/tidymodels uses what algo?
 
-\begin{table}[t]
-  \centering
-  %\small
-  \begin{tabular}{cccccccc}
-             &       &        &        & group+   &          &           & group\\
-             &       &        &        & stratum  &1 stratum & 2+ strata & +stratum\\
-    Software & group & strata & subset & algorithm&per group & per group &  +subset\\
-    \hline
-mlr3&yes&yes&no& none&no&no&no\\
-caret&yes&yes&no& none&no&no&no\\
-splitTools&yes&yes&no&none &no&no&no\\
-origami&yes&yes&no& random+leakage & yes &no&no\\
-rsample&yes&yes&no& random &yes&no&no\\
-bioLeak&yes&yes&no& random&yes&yes &no\\
-sklearn&yes&yes&no& Wasikowski&yes&yes&no\\
-soakpy&no&no&yes& none&no&no&no\\
-%    \textbf{mlr3resampling}
-    \textbf{proposed}
-             &yes&yes&yes& Wasikowski+RSS&yes&yes&yes
-  \end{tabular}
-  \caption{Comparing features provided by previous and proposed software.
-  %  software, and proposed \textbf{mlr3resampling} R package.
-  }
-  \label{tab:related}
-\end{table}
+% \begin{table*}[t]
+%   \centering
+%   %\small
+%   \begin{tabular}{cccccccc}
+%              &       &        &        & group+   &          &           & group\\
+%              &       &        &        & stratum  &1 stratum & 2+ strata & +stratum\\
+%     Software & group & strata & subset & algorithm&per group & per group &  +subset\\
+%     \hline
+% mlr3&yes&yes&no& none&no&no&no\\
+% caret&yes&yes&no& none&no&no&no\\
+% splitTools&yes&yes&no&none &no&no&no\\
+% origami&yes&yes&no& random+leakage & yes &no&no\\
+% rsample&yes&yes&no& random &yes&no&no\\
+% bioLeak&yes&yes&no& random&yes&yes &no\\
+% sklearn&yes&yes&no& Wasikowski&yes&yes&no\\
+% soakpy&no&no&yes& none&no&no&no\\
+% %    \textbf{mlr3resampling}
+%     \textbf{proposed}
+%              &yes&yes&yes& Wasikowski+RSS&yes&yes&yes
+%   \end{tabular}
+%   \caption{Comparing features provided by previous and proposed software.
+%   %  software, and proposed \textbf{mlr3resampling} R package.
+%   }
+%   \label{tab:related}
+% \end{table*}
+
 \section{Previous and proposed algorithms}
 
 Assume we have a data set with $N$ rows in $S$ strata and $G$ groups.
@@ -283,6 +292,112 @@ k^* =
 c_\sigma \hat n_{\sigma,k}.
 \end{equation}
 
+\begin{table*}[t]
+  \centering
+  \begin{tabular}{c|cccccc|cccccc}
+    &\multicolumn{6}{c|}{Proposed: sort RSS increasing, min RSS}&\multicolumn{6}{c}{Previous: sort Var decreasing, min Var}\\
+             &counts&     &      &\multicolumn{3}{c|}{total counts in}&counts&&  &\multicolumn{3}{c}{total counts in}\\
+    iteration&in group&  fold&   RSS& fold1& fold2& fold3&in group&  fold&   var& fold1& fold2& fold3\\
+    \hline
+1&    1,3&     1&     0&   1,3&&&0,2&     1&   2.0&   0,2&&\\
+2&    1,2&     2&     1&   1,3&&   1,2&1,3&     2&   2.0&   0,2&   1,3&\\
+3&    0,2&     3&     2&   1,3&   1,2&   0,2&1,2&     3&   0.5&   0,2&   1,3&   1,2\\
+4&    1,1&     3&     4&   1,3&   1,2&   1,3&0,1&     1&   0.5&   0,3&   1,3&   1,2\\
+5&    0,1&     2&     5&   1,3&   1,3&   1,3&1,1&     1&   0.0&   1,4&   1,3&   1,2
+  \end{tabular}
+  \caption{
+    Demonstration of proposed algorithm with $N=12$ rows, $G=5$ groups, $S=2$ strata, and $K=3$ folds.
+    Counts columns show numbers of rows per stratum, for example 1,3 means 1 row in first stratum and 3 rows in second stratum.
+    The proposed greedy RSS minimization works to compute an ideal fold assignment (total counts 1,3 in each fold), but previous variance minimization does not.}
+  \label{tab:rss-var}
+\end{table*}
+
+\begin{table*}[t]
+  \centering
+  \begin{tabular}{c|crccc|crrccc}
+    & \multicolumn{5}{c|}{Sort by RSS} &\multicolumn{6}{c}{Proposed: Sort by RSS, -Nrow, -Wsum} \\
+    &counts&     &&\multicolumn{2}{c|}{total counts in}&counts& & &&\multicolumn{2}{c}{total counts in}\\
+    iteration&  in group&   RSS &   fold& fold1 & fold2  &in group&Nrow & Wsum&fold& fold1 & fold2\\
+    \hline
+1&    5,3&     5    &     1 &   5,3 &     & 5,3    &  8  &22.5 & 1 &   5,3 &    \\
+2&    1,2&    34    &     2 &   5,3 &   1,2  & 3,0    &  3  & 9.0 & 2 &   5,3 &   3,0\\
+3&    1,2&    34    &     2 &   5,3 &   2,4  & 1,2    &  3  & 8.0 & 2 &   5,3 &   4,2\\
+4&    1,2&    34    &     2 &   5,3 &   3,6  & 1,2    &  3  & 8.0 & 2 &   5,3 &   5,4\\
+5&    3,0&    34    &     2 &   5,3 &   6,6  & 1,2    &  3  & 8.0 & 1 &   6,5 &   5,4\\
+6&    1,1&    41    &     1 &   6,4 &   6,6  & 1,1    &  2  & 5.5 & 2 &   6,5 &   6,5
+  \end{tabular}
+  \caption{
+    Demonstrating proposed tie-breaking algorithm with $N=22$ rows, $G=6$ groups, $S=2$ strata, and $K=2$ folds.
+    Counts columns show numbers of rows per stratum, for example 5,3 means 5 rows in first stratum and 3 rows in second stratum.
+    \textbf{Left:} sorting only by increasing RSS can assign group 3,0 in iteration 5, which results in a non-ideal fold assignment.
+    \textbf{Right:} sorting by increasing RSS, then tie-breaking by decreasing Nrow and Wsum, assigns group 3,0 in iteration 2, which results in ideal fold assignment.
+  }
+  \label{tab:ties}
+\end{table*}
+
+\begin{table*}[ht]
+  \centering
+    \small
+\begin{tabular}{|r|rr|rr|rrrrr|rr|}
+  \hline
+  Data: & \multicolumn{2}{c|}{respiratory}& \multicolumn{2}{c|}{AZtrees}& \multicolumn{5}{c|}{PetAdoption} & \multicolumn{2}{c|}{Laribi2024}\\
+   & \multicolumn{2}{c|}{rows in}& \multicolumn{2}{c|}{rows in}& \multicolumn{5}{c|}{rows in}&\multicolumn{2}{c|}{rows in}\\
+Algo. fold & s1 & s2 & s1 & s2 & s1 & s2 & s3 & s4 & s5 & s1 & s2 \\ 
+  \hline
+  ideal   & 49 & 62 & 168.5 & 1320.5 & 102.5 & 772.5 & 814.75 & 1009.25 & 1049.25 & 9176.25 &52945 \\ 
+  \hline
+RSS 1 & \textcolor{red}{48} & 64 & \textcolor{red}{168}\textcolor{white}{.0} & 1478\textcolor{white}{.0} & 102\textcolor{white}{.0} & 772\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1050}\textcolor{white}{.00} & 9177\textcolor{white}{.00} & \textcolor{red}{52945} \\ 
+  proposed 2 & \textcolor{red}{50} & 62 & \textcolor{red}{169}\textcolor{white}{.0} & 1268\textcolor{white}{.0} & 103\textcolor{white}{.0} & 772\textcolor{white}{.0} & 814\textcolor{white}{.00} & 1010\textcolor{white}{.00} & \textcolor{red}{1049}\textcolor{white}{.00} & 9176\textcolor{white}{.00} & \textcolor{red}{52945} \\ 
+   3 & \textcolor{red}{51} & 61 & \textcolor{red}{169}\textcolor{white}{.0} & 1268\textcolor{white}{.0} & 103\textcolor{white}{.0} & 773\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1049}\textcolor{white}{.00} & 9176\textcolor{white}{.00} & \textcolor{red}{52945} \\ 
+   4 & \textcolor{red}{47} & 61 & \textcolor{red}{168}\textcolor{white}{.0} & 1268\textcolor{white}{.0} & 102\textcolor{white}{.0} & 773\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1049}\textcolor{white}{.00} & 9176\textcolor{white}{.00} & \textcolor{red}{52945} \\ 
+  \hline
+  Wasikowski 1 & \textcolor{red}{49} & 63 & \textcolor{red}{160}\textcolor{white}{.0} & 1478\textcolor{white}{.0} & 103\textcolor{white}{.0} & 773\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1010\textcolor{white}{.00} & \textcolor{red}{1047}\textcolor{white}{.00} & 9176\textcolor{white}{.00} & \textcolor{red}{52946} \\ 
+  previous 2 & \textcolor{red}{49} & 59 & \textcolor{red}{172}\textcolor{white}{.0} & 1268\textcolor{white}{.0} & 103\textcolor{white}{.0} & 773\textcolor{white}{.0} & 814\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1050}\textcolor{white}{.00} & 9176\textcolor{white}{.00} & \textcolor{red}{52945} \\ 
+   3 & \textcolor{red}{50} & 62 & \textcolor{red}{171}\textcolor{white}{.0} & 1268\textcolor{white}{.0} & 102\textcolor{white}{.0} & 772\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1050}\textcolor{white}{.00} & 9177\textcolor{white}{.00} & \textcolor{red}{52945} \\ 
+   4 & \textcolor{red}{48} & 64 & \textcolor{red}{171}\textcolor{white}{.0} & 1268\textcolor{white}{.0} & 102\textcolor{white}{.0} & 772\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1050}\textcolor{white}{.00} & 9176\textcolor{white}{.00} & \textcolor{red}{52944} \\ 
+  \hline
+  random 1 & 52 & 60 & 175\textcolor{white}{.0} & 1619\textcolor{white}{.0} & 106\textcolor{white}{.0} & 869\textcolor{white}{.0} & 955\textcolor{white}{.00} & 1217\textcolor{white}{.00} & 1079\textcolor{white}{.00} & 9121\textcolor{white}{.00} & 53107 \\ 
+  baseline 2 & 35 & 77 & 160\textcolor{white}{.0} &  794\textcolor{white}{.0} &  99\textcolor{white}{.0} & 826\textcolor{white}{.0} & 922\textcolor{white}{.00} & 1079\textcolor{white}{.00} & 1153\textcolor{white}{.00} & 9263\textcolor{white}{.00} & 53186 \\ 
+   3 & 47 & 65 & 188\textcolor{white}{.0} & 1014\textcolor{white}{.0} & 113\textcolor{white}{.0} & 738\textcolor{white}{.0} & 641\textcolor{white}{.00} &  853\textcolor{white}{.00} &  985\textcolor{white}{.00} & 9111\textcolor{white}{.00} & 52800 \\ 
+   4 & 62 & 46 & 151\textcolor{white}{.0} & 1855\textcolor{white}{.0} &  92\textcolor{white}{.0} & 657\textcolor{white}{.0} & 741\textcolor{white}{.00} &  888\textcolor{white}{.00} &  980\textcolor{white}{.00} & 9210\textcolor{white}{.00} & 52687 \\ 
+   \hline
+\end{tabular}
+\caption{
+  \label{tab:counts}
+  Typical results, $K=4$ fold cross-validation on four real data sets with groups and stratification.
+  Columns ``rows in'' show number of rows in each fold and stratum (s1 = stratum 1, etc).
+  Counts closer to ideal are better (red numbers highlight slight differences between algorithms).
+  Overall the proposed RSS and previous Wasikowski algorithms gave similar results (both significantly better than random baseline).
+}
+\end{table*}
+
+\begin{figure*}[t]
+    \centering
+    % github.com/tdhock/stratified-group-cv several_Tasks.R
+    \includegraphics[width=\linewidth]{several_Tasks_even.png}
+    \caption{
+      Results of cross-validation fold assignment using six algorithms on four real data sets.
+      Each algorithm was run using 10 different random seeds on each data set (randomness used to tie-break in sort step).
+      Ideal results have small RMSE values (indicating good agreement with ideal strata counts per fold), and black rather than red dots (indicating no data leakage).
+    }
+    \label{fig:several_Tasks}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    % github.com/tdhock/stratified-group-cv Laribi2024-figure.R
+    \parbox{3.3in}{
+      \input{Laribi2024-figure-refs-small-input}
+    }\parbox{3.3in}{
+      \input{Laribi2024-figure-rows-small-input}
+    }
+    \vspace{-0.4in}
+    \caption{Empirical timings of the greedy fold assignment step of the previous and proposed algorithms, implemented in C++ code, run on Laribi2024 data (colored curves for mean, shaded band for min/max over 10 timings).
+      \textbf{Left:} timings as number of folds $K$ increases. Asymptotic reference curves (black), fit to largest empirical $K$ values, indicate that previous Wasikowski is $O(K^2)$, and proposed RSS is $O(K)$, as expected.
+    \textbf{Right:} timings as number of data $N$ increases shows that RSS is $\approx 10$ times faster asymptotically.  }
+    \label{fig:Laribi-refs}
+\end{figure*}
+
 \subsection{Proposed sort method and tie-breaking rules}
 
 This equation assigns the fold ID which results in min RSS.
@@ -341,26 +456,6 @@ The five groups are [ 1, 3 ],  [ 1, 2 ],  [ 0, 2 ],  [ 1, 1 ],  [ 0, 1 ], which 
 For these data, the previous method can result in sub-optimal assignment (depending on random tie-breaking).
 In contrast the proposed RSS minimization always obtains optimal assignment in these data.
 
-\begin{table}[t]
-  \centering
-  \begin{tabular}{c|cccccc|cccccc}
-    &\multicolumn{6}{c|}{Proposed: sort RSS increasing, min RSS}&\multicolumn{6}{c}{Previous: sort Var decreasing, min Var}\\
-             &counts&     &      &\multicolumn{3}{c|}{total counts in}&counts&&  &\multicolumn{3}{c}{total counts in}\\
-    iteration&in group&  fold&   RSS& fold1& fold2& fold3&in group&  fold&   var& fold1& fold2& fold3\\
-    \hline
-1&    1,3&     1&     0&   1,3&&&0,2&     1&   2.0&   0,2&&\\
-2&    1,2&     2&     1&   1,3&&   1,2&1,3&     2&   2.0&   0,2&   1,3&\\
-3&    0,2&     3&     2&   1,3&   1,2&   0,2&1,2&     3&   0.5&   0,2&   1,3&   1,2\\
-4&    1,1&     3&     4&   1,3&   1,2&   1,3&0,1&     1&   0.5&   0,3&   1,3&   1,2\\
-5&    0,1&     2&     5&   1,3&   1,3&   1,3&1,1&     1&   0.0&   1,4&   1,3&   1,2
-  \end{tabular}
-  \caption{
-    Demonstration of proposed algorithm with $N=12$ rows, $G=5$ groups, $S=2$ strata, and $K=3$ folds.
-    Counts columns show numbers of rows per stratum, for example 1,3 means 1 row in first stratum and 3 rows in second stratum.
-    The proposed greedy RSS minimization works to compute an ideal fold assignment (total counts 1,3 in each fold), but previous variance minimization does not.}
-  \label{tab:rss-var}
-\end{table}
-
 
 \subsection{Tie-breaking}
 
@@ -374,29 +469,6 @@ In this case, that is [ 3, 0 ].
 We propose to compute freq = mean(ideal*group), which is 9 for [ 3, 0 ] and 8 for [ 1, 2 ].
 Using this tie-breaking rule, the greedy heuristic obtains the optimal fold assignment in these data.
 In contrast, the previous rule results in a sub-optimal fold assignment.
-
-\begin{table}[t]
-  \centering
-  \begin{tabular}{c|crccc|crrccc}
-    & \multicolumn{5}{c|}{Sort by RSS} &\multicolumn{6}{c}{Proposed: Sort by RSS, -Nrow, -Wsum} \\
-    &counts&     &&\multicolumn{2}{c|}{total counts in}&counts& & &&\multicolumn{2}{c}{total counts in}\\
-    iteration&  in group&   RSS &   fold& fold1 & fold2  &in group&Nrow & Wsum&fold& fold1 & fold2\\
-    \hline
-1&    5,3&     5    &     1 &   5,3 &   0,0  & 5,3    &  8  &22.5 & 1 &   5,3 &    0,0\\
-2&    1,2&    34    &     2 &   5,3 &   1,2  & 3,0    &  3  & 9.0 & 2 &   5,3 &   3,0\\
-3&    1,2&    34    &     2 &   5,3 &   2,4  & 1,2    &  3  & 8.0 & 2 &   5,3 &   4,2\\
-4&    1,2&    34    &     2 &   5,3 &   3,6  & 1,2    &  3  & 8.0 & 2 &   5,3 &   5,4\\
-5&    3,0&    34    &     2 &   5,3 &   6,6  & 1,2    &  3  & 8.0 & 1 &   6,5 &   5,4\\
-6&    1,1&    41    &     1 &   6,4 &   6,6  & 1,1    &  2  & 5.5 & 2 &   6,5 &   6,5
-  \end{tabular}
-  \caption{
-    Demonstrating proposed tie-breaking algorithm with $N=22$ rows, $G=6$ groups, $S=2$ strata, and $K=2$ folds.
-    Counts columns show numbers of rows per stratum, for example 5,3 means 5 rows in first stratum and 3 rows in second stratum.
-    \textbf{Left:} sorting only by increasing RSS can assign group 3,0 in iteration 5, which results in a non-ideal fold assignment.
-    \textbf{Right:} sorting by increasing RSS, then tie-breaking by decreasing Nrow and Wsum, assigns group 3,0 in iteration 2, which results in ideal fold assignment.
-  }
-  \label{tab:ties}
-\end{table}
 
 \verb|bioLeak::make_split_plan|
 stratify: logical, keep outcome proportions similar across folds. For
@@ -433,64 +505,6 @@ We also ran three other R packages with functions for computing fold assignment 
 \end{itemize}
 
 
-\begin{table}[ht]
-\centering
-\begin{tabular}{lr|rr|rrrrr}
-  \hline
-  &Data: & \multicolumn{2}{c|}{Laribi2024}& \multicolumn{5}{c}{PetAdoption}\\ 
-  & & \multicolumn{2}{c|}{row counts in}& \multicolumn{5}{c}{row counts in}\\
-algorithm & fold & s1 & s2 & s1 & s2 & s3 & s4 & s5 \\ 
-  \hline
-  ideal &  & 9176.25 & 52945 & 102.5 & 772.5 & 814.75 & 1009.25 & 1049.25 \\ 
-  \hline
-  RSS &   1 & 9177\textcolor{white}{.00} & \textcolor{red}{52945} & 102\textcolor{white}{.0} & 772\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1050}\textcolor{white}{.00} \\ 
-  (proposed) &   2 & 9176\textcolor{white}{.00} & \textcolor{red}{52945} & 103\textcolor{white}{.0} & 772\textcolor{white}{.0} & 814\textcolor{white}{.00} & 1010\textcolor{white}{.00} & \textcolor{red}{1049}\textcolor{white}{.00} \\ 
-   &   3 & 9176\textcolor{white}{.00} & \textcolor{red}{52945} & 103\textcolor{white}{.0} & 773\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1049}\textcolor{white}{.00} \\ 
-   &   4 & 9176\textcolor{white}{.00} & \textcolor{red}{52945} & 102\textcolor{white}{.0} & 773\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1049}\textcolor{white}{.00} \\ 
-  \hline
-  Wasikowski &   1 & 9176\textcolor{white}{.00} & \textcolor{red}{52946} & 103\textcolor{white}{.0} & 773\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1010\textcolor{white}{.00} & \textcolor{red}{1047}\textcolor{white}{.00} \\ 
-  (previous) &   2 & 9176\textcolor{white}{.00} & \textcolor{red}{52945} & 103\textcolor{white}{.0} & 773\textcolor{white}{.0} & 814\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1050}\textcolor{white}{.00} \\ 
-   &   3 & 9177\textcolor{white}{.00} & \textcolor{red}{52945} & 102\textcolor{white}{.0} & 772\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1050}\textcolor{white}{.00} \\ 
-   &   4 & 9176\textcolor{white}{.00} & \textcolor{red}{52944} & 102\textcolor{white}{.0} & 772\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1050}\textcolor{white}{.00} \\ 
-  \hline
-  random &   1 & 9121\textcolor{white}{.00} & 53107 & 106\textcolor{white}{.0} & 869\textcolor{white}{.0} & 955\textcolor{white}{.00} & 1217\textcolor{white}{.00} & 1079\textcolor{white}{.00} \\ 
-   &   2 & 9263\textcolor{white}{.00} & 53186 &  99\textcolor{white}{.0} & 826\textcolor{white}{.0} & 922\textcolor{white}{.00} & 1079\textcolor{white}{.00} & 1153\textcolor{white}{.00} \\ 
-   &   3 & 9111\textcolor{white}{.00} & 52800 & 113\textcolor{white}{.0} & 738\textcolor{white}{.0} & 641\textcolor{white}{.00} &  853\textcolor{white}{.00} &  985\textcolor{white}{.00} \\ 
-   &   4 & 9210\textcolor{white}{.00} & 52687 &  92\textcolor{white}{.0} & 657\textcolor{white}{.0} & 741\textcolor{white}{.00} &  888\textcolor{white}{.00} &  980\textcolor{white}{.00} \\ 
-  \hline
-\end{tabular}
-\caption{
-  \label{tab:counts}
-  Typical results on real data TODO
-}
-\end{table}
-
-\begin{figure}[t]
-    \centering
-    % github.com/tdhock/stratified-group-cv several_Tasks.R
-    \includegraphics[width=\linewidth]{several_Tasks_even.png}
-    \caption{
-      Results of cross-validation fold assignment using six algorithms on four real data sets.
-      Each algorithm was run using 10 different random seeds on each data set (randomness used to tie-break in sort step).
-      Desired results are small RMSE values (indicating good agreement with ideal strata counts per fold), and black dots (indicating no data leakage).
-    }
-    \label{fig:several_Tasks}
-\end{figure}
-
-\begin{figure}[t]
-    \centering
-    % github.com/tdhock/stratified-group-cv Laribi2024-figure.R
-    \parbox{3.3in}{
-      \input{Laribi2024-figure-refs-small-input}
-    }\parbox{3.3in}{
-      \input{Laribi2024-figure-rows-small-input}
-    }
-    \vspace{-0.4in}
-    \caption{Empirical timings of the greedy fold assignment step of the previous and proposed algorithms, implemented in C++ code, run on Laribi2024 data (colored curves for mean, shaded band for min/max over 10 timings).
-      \textbf{Left:} timings as number of folds $K$ increases. Asymptotic reference curves (black), fit to largest empirical $K$ values, indicate that previous Wasikowski is $O(K^2)$, and proposed RSS is $O(K)$, as expected.
-    \textbf{Right:} timings as number of data $N$ increases shows that RSS is $\approx 10$ times faster asymptotically.  }
-    \label{fig:Laribi-refs}
-\end{figure}
 
 
 % \begin{table}[t]
@@ -514,7 +528,86 @@ algorithm & fold & s1 & s2 & s1 & s2 & s3 & s4 & s5 \\
 Other loss functions like max norm objective in \citet{Pop2013}.
 
 Can used at the same time as subset role \citep{Hocking2026soak}.
+
+\subsection*{AI use statement}
+
+We have not used generative AI tools for any task related to this paper.
+
+\subsubsection*{Acknowledgements}
+
+
+
+%\subsubsection*{References}
+
 \bibliographystyle{abbrvnat}
 \bibliography{refs}
+
+\section*{Checklist}
+
+
+% %%% BEGIN INSTRUCTIONS %%%
+The checklist follows the references. For each question, choose your answer from the three possible options: Yes, No, Not Applicable.  You are encouraged to include a justification to your answer, either by referencing the appropriate section of your paper or providing a brief inline description (1-2 sentences).
+Please do not modify the questions.  Note that the Checklist section does not count towards the page limit. Not including the checklist in the first submission won't result in desk rejection, although in such case we will ask you to upload it during the author response period and include it in camera ready (if accepted).
+
+\textbf{In your paper, please delete this instructions block and only keep the Checklist section heading above along with the questions/answers below.}
+% %%% END INSTRUCTIONS %%%
+
+
+\begin{enumerate}
+
+  \item For all models and algorithms presented, check if you include:
+  \begin{enumerate}
+    \item A clear description of the mathematical setting, assumptions, algorithm, and/or model. [Yes/No/Not Applicable]
+    \item An analysis of the properties and complexity (time, space, sample size) of any algorithm. [Yes/No/Not Applicable]
+    \item (Optional) Anonymized source code, with specification of all dependencies, including external libraries. [Yes/No/Not Applicable]
+  \end{enumerate}
+
+  \item For any theoretical claim, check if you include:
+  \begin{enumerate}
+    \item Statements of the full set of assumptions of all theoretical results. [Yes/No/Not Applicable]
+    \item Complete proofs of all theoretical results. [Yes/No/Not Applicable]
+    \item Clear explanations of any assumptions. [Yes/No/Not Applicable]
+  \end{enumerate}
+
+  \item For all figures and tables that present empirical results, check if you include:
+  \begin{enumerate}
+    \item The code, data, and instructions needed to reproduce the main experimental results (either in the supplemental material or as a URL). [Yes/No/Not Applicable]
+    \item All the training details (e.g., data splits, hyperparameters, how they were chosen). [Yes/No/Not Applicable]
+    \item A clear definition of the specific measure or statistics and error bars (e.g., with respect to the random seed after running experiments multiple times). [Yes/No/Not Applicable]
+    \item A description of the computing infrastructure used. (e.g., type of GPUs, internal cluster, or cloud provider). [Yes/No/Not Applicable]
+  \end{enumerate}
+
+  \item If you are using existing assets (e.g., code, data, models) or curating/releasing new assets, check if you include:
+  \begin{enumerate}
+    \item Citations of the creator If your work uses existing assets. [Yes/No/Not Applicable]
+    \item The license information of the assets, if applicable. [Yes/No/Not Applicable]
+    \item New assets either in the supplemental material or as a URL, if applicable. [Yes/No/Not Applicable]
+    \item Information about consent from data providers/curators. [Yes/No/Not Applicable]
+    \item Discussion of sensible content if applicable, e.g., personally identifiable information or offensive content. [Yes/No/Not Applicable]
+  \end{enumerate}
+
+  \item If you used crowdsourcing or conducted research with human subjects, check if you include:
+  \begin{enumerate}
+    \item The full text of instructions given to participants and screenshots. [Yes/No/Not Applicable]
+    \item Descriptions of potential participant risks, with links to Institutional Review Board (IRB) approvals if applicable. [Yes/No/Not Applicable]
+    \item The estimated hourly wage paid to participants and the total amount spent on participant compensation. [Yes/No/Not Applicable]
+  \end{enumerate}
+
+\end{enumerate}
+
+
+
+\clearpage
+\appendix
+\thispagestyle{empty}
+
+% Supplementary material: To improve readability, you must use a single-column format for the supplementary material.
+\onecolumn
+\aistatstitle{Instructions for Paper Submissions to AISTATS 2027: \\
+Supplementary Materials}
+
+Note: You can choose whether to include you appendices as part of the main submission file (here) OR submit them separately as part of the supplementary material. The preferred option is to include appendices as part of the main submission file. It is the authors' responsibility that any supplementary material does not conflict in content with the main paper (e.g., the separately uploaded additional material is not an updated version of the one appended to the manuscript).
+
+
 
 \end{document}
