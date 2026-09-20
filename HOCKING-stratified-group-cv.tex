@@ -30,7 +30,7 @@
 \section{Introduction}
 
 Many types of modern artificially intelligent systems are powered by machine learning: image classification, medical diagnosis/prognosis, automatic translation, etc.
-$K$-fold cross-validation (TODO citation) is a fundamental data-splitting technique that is used for both training (tuning hyper-parameters of a learning algorithm) and evaluation (comparing different learning algorithms).
+$K$-fold cross-validation (TODO citation) is a fundamental data-splitting technique that is used for both training (tuning hyper-parameters of a learning algorithm) and evaluation (comparing prediction accuracy of different learning algorithms).
 In a data set of $N$ observations, $K$-fold cross-validation involves assigning a fold ID (integer between 1 and $K$) to each of the $N$ observations.
 For each fold ID from 1 to $K$, the corresponding observations form a test set, and the other observations form a train set (for the case of evaluation).
 Learning algorithms are fit to each train set, then prediction error rates are computed on the corresponding test set.
@@ -39,6 +39,8 @@ The resulting $K$ measurements of prediction error on the test sets are used to 
 %TODO different kinds of data, Motivation for stratification and grouping
 
 \subsection{Issues with unstructured cross-validation in structured data}
+
+\subsubsection{No stratification, no groups}
 
 Because the goal of data-splitting is to estimate prediction error in the same distributional setting as the original data set, it is important for the splitting procedure to generate train/test sets which are representative of the original data.
 In an unstructured data set, we would at least like to ensure that each test set has the same number of observations.
@@ -85,18 +87,23 @@ E)&yes strata&Positive &  \textbf{225} & \textbf{224} & \textbf{225} &  39 &  39
 }
 \end{table}
 
+\subsubsection{Stratification, no groups}
+
 However, the random shuffling in unstructured cross-validation can cause substantial variation between class frequencies, which is undesirable.
 For the AZtrees example, one random shuffle gave 1749--1772 Negative rows and 213--237 Positive rows (Table~\ref{tab:counts} Case A Negative and Positive).
 To get class frequencies that are approximately equal across folds (at most one row different), cross-validation can be stratified using the class.
-For each stratum/class with $c$ rows, we repeat the fold values ($1, \dots, K, 1, \dots, K, \dots$), to obtain a $c$-vector, then assign the shuffled fold values to the rows in that class/stratum.
+For a stratum/class with $c$ rows, we repeat the fold values ($1, \dots, K, 1, \dots, K, \dots$), to obtain a $c$-vector, then assign the shuffled fold values to the rows in that class/stratum.
 For the AZtrees example, stratification results in 1760--1761 negative rows per fold, and 224--225 positive rows per fold.
 (Table~\ref{tab:counts} Case B Negative and Positive).
+
+\subsubsection{Groups, no stratification}
 
 In a structured data set with a grouping variable, the data-splitting technique should work on groups instead of rows, to avoid data leakage (TODO citation).
 For example, the AZtrees data were created by drawing polygons on a map (TODO citation).
 Each polygon represents an area of the map labeled as positive or negative, and all pixels in the polygon are assigned the corresponding class label.
-By treating each polygon as an atomic group, we can avoid splitting some pixels of a polygon to the train set, and other pixels from that polygon to the test set (data leakage), which would result in over-optimistic estimates of test error rates.
-Using cross-validation without groups in the AZtrees data results in data leakage: some groups are randomly assigned to multiple folds (Table~\ref{tab:counts} Cases A and B, 1--104 groups in multiple folds).
+We would like to avoid generating a split with some pixels of a polygon assigned to the train set, and other pixels from that polygon assigned to the test set (data leakage), which would result in over-optimistic estimates of test error rates.
+In the AZtrees data, cross-validation without grouping by polygon results in data leakage: some groups are randomly assigned to multiple folds (Table~\ref{tab:counts} Cases A and B, 1--104 groups in multiple folds).
+
 To modify cross-validation for a data set with $G$ groups, we repeat the fold values ($1, \dots, K, 1, \dots, K, \dots$), to obtain a $G$-vector, which is randomly shuffled to assign each group to a fold.
 Grouped cross-validation always results in approximately the same number of groups in each fold (max difference of 1 group if $G/K$ is not an integer).
 The AZtrees data has $G=189$ groups, so grouped cross-validation with $K=3$ folds results in $G/K=63$ groups per fold (Table~\ref{tab:counts} Case C Total).
@@ -142,6 +149,8 @@ Drops a potentially large $O(SG)$ term from memory complexity.
 
 Proposed RSS minimization algorithm which is asymptotically faster: previous quadratic time in number of folds $K$ is reduced to linear time.
 
+Two new simple synthetic data sets to use as test cases, and to demonstrate the advantages of the proposed algorithm.
+
 Systematic comparisons with 8 previous software packages, in terms of features, empirical fold assignment accuracy and computation time in 4 real data sets.
 
 \section{Related Work}
@@ -171,22 +180,26 @@ mlr3/caret/tidymodels uses what algo?
 \begin{table}[t]
   \centering
   %\small
-  \begin{tabular}{ccccccc}
-             &       &        &        &           &           & group\\
-             &       &        &        & 1 stratum & 2+ strata & +stratum\\
-    Software & group & strata & subset & per group & per group &  +subset\\
+  \begin{tabular}{cccccccc}
+             &       &        &        & group+   &          &           & group\\
+             &       &        &        & stratum  &1 stratum & 2+ strata & +stratum\\
+    Software & group & strata & subset & algorithm&per group & per group &  +subset\\
     \hline
-mlr3&yes&yes&no&no&no&no\\
-caret&yes&yes&no&no&no&no\\
-splitTools&yes&yes&no&no&no&no\\
-origami&yes&yes&no&random+leakage&no&no\\
-rsample&yes&yes&no&random&no&no\\
-bioLeak&yes&yes&no&random&random&no\\
-sklearn&yes&yes&no&yes&yes&no\\
-soakpy&no&no&yes&no&no&no\\
-\textbf{mlr3resampling}&yes&yes&yes&yes&yes&yes
+mlr3&yes&yes&no& none&no&no&no\\
+caret&yes&yes&no& none&no&no&no\\
+splitTools&yes&yes&no&none &no&no&no\\
+origami&yes&yes&no& random+leakage & yes &no&no\\
+rsample&yes&yes&no& random &yes&no&no\\
+bioLeak&yes&yes&no& random&yes&yes &no\\
+sklearn&yes&yes&no& Wasikowski&yes&yes&no\\
+soakpy&no&no&yes& none&no&no&no\\
+%    \textbf{mlr3resampling}
+    \textbf{proposed}
+             &yes&yes&yes& Wasikowski+RSS&yes&yes&yes
   \end{tabular}
-  \caption{Comparing features provided by previous software, and proposed \textbf{mlr3resampling} R package.}
+  \caption{Comparing features provided by previous and proposed software.
+  %  software, and proposed \textbf{mlr3resampling} R package.
+  }
   \label{tab:related}
 \end{table}
 \section{Proposed Methods}
@@ -334,7 +347,7 @@ In contrast the proposed RSS minimization always obtains optimal assignment in t
   \end{tabular}
   \caption{
     Demonstration of proposed algorithm with $N=12$ rows, $G=5$ groups, $S=2$ strata, and $K=3$ folds.
-    Counts columns show numbers of rows per stratum, for example 1,3 means 1 rows in first stratum and 3 rows in second stratum.
+    Counts columns show numbers of rows per stratum, for example 1,3 means 1 row in first stratum and 3 rows in second stratum.
     The proposed greedy RSS minimization works to compute an ideal fold assignment (total counts 1,3 in each fold), but previous variance minimization does not.}
   \label{tab:rss-var}
 \end{table}
@@ -353,42 +366,28 @@ We propose to compute freq = mean(ideal*group), which is 9 for [ 3, 0 ] and 8 fo
 Using this tie-breaking rule, the greedy heuristic obtains the optimal fold assignment in these data.
 In contrast, the previous rule results in a sub-optimal fold assignment.
 
-\begin{verbatim}
-Example: 6 groups, 2-fold CV.
-     group   rss  nrow  freq
- 1:    5,3     5     8  22.5
- 2:    3,0    34     3   9.0
- 3:    1,2    34     3   8.0
- 4:    1,2    34     3   8.0
- 5:    1,2    34     3   8.0
- 6:    1,1    41     2   5.5
-TOTAL 12,10
-ideal  6,5    
-\end{verbatim}
-
-
-\begin{verbatim}
-    group  fold  fold1  fold2
-1:    5,3     1    5,3    0,0
-2:    1,2     2    5,3    1,2
-3:    1,2     2    5,3    2,4
-4:    1,2     2    5,3    3,6
-5:    3,0     2    5,3    6,6
-6:    1,1     1    6,4    6,6
-3,0 added near end = Not ideal!    
-\end{verbatim}
-
-\begin{verbatim}
-1:    5,3     1    5,3    0,0
-2:    3,0     2    5,3    3,0
-3:    1,2     2    5,3    4,2
-4:    1,2     2    5,3    5,4
-5:    1,2     1    6,5    5,4
-6:    1,1     2    6,5    6,5
-3,0 added first =  Yes ideal!
-\end{verbatim}
-
-
+\begin{table}[t]
+  \centering
+  \begin{tabular}{c|crccc|crrccc}
+    & \multicolumn{5}{c|}{Sort by RSS} &\multicolumn{6}{c}{Proposed: Sort by RSS, -Nrow, -Wsum} \\
+    &counts&     &&\multicolumn{2}{c|}{total counts in}&counts& & &&\multicolumn{2}{c}{total counts in}\\
+    iteration&  in group&   RSS &   fold& fold1 & fold2  &in group&Nrow & Wsum&fold& fold1 & fold2\\
+    \hline
+1&    5,3&     5    &     1 &   5,3 &   0,0  & 5,3    &  8  &22.5 & 1 &   5,3 &    0,0\\
+2&    1,2&    34    &     2 &   5,3 &   1,2  & 3,0    &  3  & 9.0 & 2 &   5,3 &   3,0\\
+3&    1,2&    34    &     2 &   5,3 &   2,4  & 1,2    &  3  & 8.0 & 2 &   5,3 &   4,2\\
+4&    1,2&    34    &     2 &   5,3 &   3,6  & 1,2    &  3  & 8.0 & 2 &   5,3 &   5,4\\
+5&    3,0&    34    &     2 &   5,3 &   6,6  & 1,2    &  3  & 8.0 & 1 &   6,5 &   5,4\\
+6&    1,1&    41    &     1 &   6,4 &   6,6  & 1,1    &  2  & 5.5 & 2 &   6,5 &   6,5
+  \end{tabular}
+  \caption{
+    Demonstrating proposed tie-breaking algorithm with $N=22$ rows, $G=6$ groups, $S=2$ strata, and $K=2$ folds.
+    Counts columns show numbers of rows per stratum, for example 5,3 means 5 rows in first stratum and 3 rows in second stratum.
+    \textbf{Left:} sorting only by increasing RSS can assign group 3,0 in iteration 5, which results in a non-ideal fold assignment.
+    \textbf{Right:} sorting by increasing RSS, then tie-breaking by decreasing Nrow and Wsum, assigns group 3,0 in iteration 2, which results in ideal fold assignment.
+  }
+  \label{tab:ties}
+\end{table}
 
 \verb|bioLeak::make_split_plan|
 stratify: logical, keep outcome proportions similar across folds. For
@@ -429,7 +428,11 @@ We also ran three other R packages with functions for computing fold assignment 
     \centering
     % github.com/tdhock/stratified-group-cv several_Tasks.R
     \includegraphics[width=\linewidth]{several_Tasks_even.png}
-    \caption{Results of cross-validation fold assignment using six algorithms on four real data sets.}
+    \caption{
+      Results of cross-validation fold assignment using six algorithms on four real data sets.
+      Each algorithm was run using 10 different random seeds on each data set (randomness used to tie-break in sort step).
+      Desired results are small RMSE values (indicating good agreement with ideal strata counts per fold), and black dots (indicating no data leakage).
+    }
     \label{fig:several_Tasks}
 \end{figure}
 
