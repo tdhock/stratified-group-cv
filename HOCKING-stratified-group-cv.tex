@@ -239,9 +239,10 @@ def assign_folds(strata, groups, N_folds):
   return folds
 \end{verbatim}
 
-The algorithm inputs $N$-vectors \texttt{strata} and \texttt{groups}, as well as \texttt{N\_folds} (integer).
+
+The algorithm inputs $N$-vectors \texttt{strata} ($S$ unique values) and \texttt{groups} ($G$ unique values), as well as \texttt{N\_folds} (integer, $K$).
 The greedy algorithm requires storing the current number of strata assigned to each fold in \texttt{count\_matrix}, which starts with zeros.
-The \texttt{Sort()} sub-routine is used to determine the order groups will be considered by the greedy algorithm, and then each group is assigned to a fold in the for loop.
+The $O(N\log N)$ time \texttt{Sort()} sub-routine is used to determine the order groups will be considered by the greedy algorithm, and then each group is assigned to a fold in the for loop.
 For each group, the \texttt{get\_best\_fold()} sub-routine determines the fold assignment, which is stored for output, and used to update \texttt{count\_matrix}.
 
 \subsection{Previous Wasikowski algorithm}
@@ -258,10 +259,13 @@ The previous algorithm’s $O(SG)$ memory complexity can be prohibitive if there
 We propose to sort all data rows by group, so the for loop over groups becomes a for loop over data rows, and the \texttt{count(group)} sub-routine computes a vector of strata counts for the current group (no need for a matrix of counts for every group and stratum).
 This proposed online counting algorithm can be used with the previous heuristic (Wasikowski-L in Table~\ref{tab:complexity}), and with our proposed squared error minimization heuristic (RSS in Table~\ref{tab:complexity}).
 Both have no more $O(SG)$ term in memory complexity (Table~\ref{tab:complexity}), so can be used with a large number of strata and groups.
-\subsection{Proposed squared error minimization for reduced time complexity}
+\subsection{Proposed RSS minimization for reduced time complexity}
 
-For each row $i\in\{1,\dots,N\}$, we have a stratum $s_i\in\{1,\dots,S\}$, and a group $g_i\in\{1,\dots,G\}$.
-The algorithm begins by counting the number of data in each stratum, then dividing by the number of folds, to obtain the ideal number of rows which could appear in each fold.
+The main idea of the proposed algorithm is to minimize the Residual Sum of Squares (RSS) between the ideal and actual row counts per fold/stratum.
+\subsubsection{Proposed Sort() sub-routine}
+
+For each row $i\in\{1,\dots,N\}$, we have a stratum $s_i\in\{1,\dots,S\}$.
+The algorithm begins by counting the number of rows in each stratum, then dividing by the number of folds, to obtain the ideal number of rows which could appear in each fold.
 For each stratum $\sigma\in\{1,\dots,S\}$, the ideal number of rows is
 \begin{equation}
 n^*_\sigma = \sum_{i\in\{1,\dots,N\}}
@@ -270,8 +274,32 @@ I[s_i = \sigma]/K,
 where $I[\cdot]$ is the indicator function (1 if argument is true, 0 otherwise).
 Table~\ref{tab:counts} (ideal row) shows $n^*_\sigma$ values for $K=4$ fold cross-validation in four real data sets.
 
+The proposed algorithm uses the RSS of each group in the Sort() sub-routine (min RSS assigned first).
+To compute the RSS for each group, we first compute $c_1,\dots,c_S $, the counts of rows in each stratum for the current group, \texttt{count(group)} in the pseudo-code.
+Then we define the RSS for that group as the squared error between ideal and group counts, summed over strata,
+%\begin{equation}
+$
+\sum_{\sigma\in\{1,\dots,S\}}
+(c_{\sigma} - n^*_\sigma)^2.
+$
+%\end{equation}
+If there are two groups with the same RSS value, we break ties using the number of rows in that group,
+$
+\sum_{\sigma\in\{1,\dots,S\}}
+c_{\sigma},
+$
+and do a third level of tie-breaking with the weighted sum,
+$
+\sum_{\sigma\in\{1,\dots,S\}}
+c_{\sigma}n^*_\sigma.
+$
+These sorting rules can be justified as analogous to the ``pack larger bins first'' heuristic (TODO citation).
+
+\subsubsection{Proposed greedy fold assignment}
+
+Our proposed \texttt{get\_best\_fold()} sub-routine is defined as follows.
 For each stratum $\sigma$ and fold $\phi\in\{1,\dots,K\}$, let $\hat n_{\sigma,\phi}$ be the number of data with that stratum assigned to that fold (\texttt{count\_matrix} in the pseudo-code).
-The optimization problem is to find a fold assignment which minimizes the residual sum of squares,
+We propose to find a fold assignment which minimizes the residual sum of squares,
 \begin{equation}
 \text{RSS}=
 \sum_{\sigma\in\{1,\dots,S\}}
@@ -339,7 +367,6 @@ RSS 1 & \textcolor{red}{48} & 64 & \textcolor{red}{168}\textcolor{white}{.0} & 1
 \end{table*}
 
 The algorithm starts with all $\hat n_{\sigma,\phi}=0$ and then assigns a fold to one group at a time.
-Let $c_1,\dots,c_S $ be the counts of data in each stratum for the current group, \texttt{count(group)} in the pseudo-code.
 We propose assign the group to the fold that minimizes the RSS after assignment,
 \begin{equation}
 \min_{k\in\{1,\dots,K\}}
@@ -383,7 +410,10 @@ k^* =
 \sum_{\sigma\in\{1,\dots,S\}}
 c_\sigma \hat n_{\sigma,k}.
 \end{equation}
-We propose using~(\ref{eq:k*}) for the \texttt{get\_best\_fold()} sub-routine in the pseudo-code.
+We propose using~(\ref{eq:k*}) for the \texttt{get\_best\_fold()} sub-routine in the pseudo-code, with tie-breaking by taking the fold which results in minimal counts larger than ideal.
+The proposed RSS minimization procedure~(\ref{eq:k*}) has a sum over $S$ terms inside a min over $K$ terms, yielding a  $O(SK)$ time  \texttt{get\_best\_fold()} sub-routine.
+Comparing to the previous Wasikowski algorthm, the proposed RSS minimization is asymptotically faster (linear rather than quadratic in the number of folds $K$).
+The overall complexity of the proposed RSS minimization algorithm is therefore $O(N\log N+KSG)$ time and $O(N+KS)$ memory (Table~\ref{tab:complexity}).
 
 \begin{table*}[t]
   \centering
@@ -451,24 +481,19 @@ But we want to insert [ 10, 10 ] first (pack larger items first).
 Our algo achieves this desired insertion order: [ 10, 10 ] then [ 1, 1 ] then [ 1, 0 ].
 The proposed algo results in better fold assignments for these simple examples.
 
-\subsection{Complexity analysis}
-We assume there are $N$ data, $K$ folds, $G$ groups, and $S$ strata.
-All algorithms begin by sorting the groups, typically $O(N\log N)$ time.
+% \subsection{Complexity analysis}
+% We assume there are $N$ data, $K$ folds, $G$ groups, and $S$ strata.
+% All algorithms begin by sorting the groups, typically $O(N\log N)$ time.
 
-The previous Wasikowski algorithm begins by computing a $G\times S$ matrix of counts per group and stratum, requiring $O(GS)$ time and memory.
-For large $G$ and $S$, this large count matrix will be very sparse (almost all entries zero), which is inefficient.
-Because the large size of this matrix could be prohibitive, we propose to modify the Wasikowski algorithm to avoid this inefficiency.
-Our proposed memory-efficient variant is called Wasikowski-L in Table~\ref{tab:complexity} (L for Limited memory).
-We propose to first sort the data by group, then compute and store a count vector for only the current group, thus reducing the memory requirement to $O(S)$, which can be ignored since it is smaller than $O(N)$ (Table~\ref{tab:complexity}, proposed rows, Memory column).
+% The previous Wasikowski algorithm begins by computing a $G\times S$ matrix of counts per group and stratum, requiring $O(GS)$ time and memory.
+% For large $G$ and $S$, this large count matrix will be very sparse (almost all entries zero), which is inefficient.
+% Because the large size of this matrix could be prohibitive, we propose to modify the Wasikowski algorithm to avoid this inefficiency.
+% Our proposed memory-efficient variant is called Wasikowski-L in Table~\ref{tab:complexity} (L for Limited memory).
+% We propose to first sort the data by group, then compute and store a count vector for only the current group, thus reducing the memory requirement to $O(S)$, which can be ignored since it is smaller than $O(N)$ (Table~\ref{tab:complexity}, proposed rows, Memory column).
 
-The previous Wasikowski algorithm maintains a $K\times S$ matrix of counts per fold and stratum.
-The \texttt{get\_best\_fold()} method considers putting the new group in each of the $K$ folds, then computes SD over folds for each stratum, then mean of SD values over strata.
-The \texttt{get\_best\_fold()} method is therefore $O(K^2 S)$ time, and the overall algorithm is therefore $O(N\log N + K^2 G S)$ time (Table~\ref{tab:complexity}, Wasikowski rows, Time column).
-
-The proposed RSS minimization procedure~(\ref{eq:k*}) has a sum over $S$ terms inside a min over $K$ terms.
-The proposed \texttt{get\_best\_fold()} is therefore $O(SK)$ time.
-Comparing to the previous Wasikowski algorthm, the proposed RSS minimization is asymptotically faster (linear rather than quadratic in the number of folds $K$).
-The overall time complexity of the proposed RSS minimization algorithm is therefore
+% The previous Wasikowski algorithm maintains a $K\times S$ matrix of counts per fold and stratum.
+% The \texttt{get\_best\_fold()} method considers putting the new group in each of the $K$ folds, then computes SD over folds for each stratum, then mean of SD values over strata.
+% The \texttt{get\_best\_fold()} method is therefore $O(K^2 S)$ time, and the overall algorithm is therefore $O(N\log N + K^2 G S)$ time (Table~\ref{tab:complexity}, Wasikowski rows, Time column).
 
 \subsection{Simple example where RSS beats Wasikowski}
 
