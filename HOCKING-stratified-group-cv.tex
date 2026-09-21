@@ -158,19 +158,15 @@ This paper proposes new heuristic algorithms with reduced asymptotic time and me
 
 \subsection{Contributions}
 
-Complexity analysis of previous Wasikowski algorthm in terms of two sub-routines, Sort() and get best fold().
-
-Proposed online counting and group assignment algorithm, for asymptotically less memory usage.
-Drops a potentially large $O(SG)$ term from memory complexity.
-
-Proposed RSS minimization algorithm which is asymptotically faster: previous quadratic time in number of folds $K$ is reduced to linear time.
-
-Two new simple synthetic data sets to use as test cases, and to demonstrate the advantages of the proposed algorithm.
-
-Systematic comparisons with 8 previous software packages, in terms of features, empirical fold assignment accuracy and computation time in 4 real data sets.
+This paper presents five new research contributions related to cross-validation with groups and strata.
+After reviewing related research (Section~\ref{sec:related}), we present a new abstract characterization of the previous Wasikowski algorithm, which allows understanding and improving three sub-routines (Contribution~1, Section~\ref{sec:pseudo-code}).
+Next, we propose a new online counting algorithm, with asymptotically less memory usage (Contribution~2, Section~\ref{sec:online}), which permits new applications to data sets with large numbers of strata and groups.
+We propose a new RSS minimization algorithm which is asymptotically faster than the previous Wasikowski algorithm (Contribution~3, Section~\ref{sec:RSS-algo}).
+To demonstrate the advantages of our new algorithm, we propose two simple synthetic data sets to use as test cases (Contribution~4, Section~\ref{sec:synthetic-tests}).
+Finally, we present systematic comparisons with 8 previous software packages, in terms of features, empirical fold assignment accuracy and computation time in four real data sets (Contribution~5, Section~\ref{sec:results}).
 
 \section{Related Work}
-
+\label{sec:related}
 Similar to 
 \url{https://en.wikipedia.org/wiki/Bin_packing_problem}
 but with a fixed number of bins.
@@ -225,9 +221,8 @@ Assume we have a data set with $N$ rows in $S$ strata and $G$ groups.
 We want to perform $K$-fold cross-validation, such that data in each group are assigned the same fold ID (no data leakage), and the strata proportions in are approximately equal across folds.
 
 \subsection{Pseudo-code for greedy fold assignment}
-
+\label{sec:pseudo-code}
 The previous Wasikowski algorithm, and our proposed algorithms, are all greedy heuristics which we summarize using the pseudo-code:
-
 \begin{verbatim}
 def assign_folds(strata, groups, N_folds):
   count_matrix = zeros(N_strata, N_folds)
@@ -238,8 +233,7 @@ def assign_folds(strata, groups, N_folds):
     count_matrix[,best_fold] += count(group)
   return folds
 \end{verbatim}
-
-
+This is a novel abstract characterization of the previous algorithm (Contribution~1), which facilitates understanding and improving its computational complexity.
 The algorithm inputs $N$-vectors \texttt{strata} ($S$ unique values) and \texttt{groups} ($G$ unique values), as well as \texttt{N\_folds} (integer, $K$).
 The greedy algorithm requires storing the current number of strata assigned to each fold in \texttt{count\_matrix}, which starts with zeros.
 The $O(N\log N)$ time \texttt{Sort()} sub-routine is used to determine the order groups will be considered by the greedy algorithm, and then each group is assigned to a fold in the for loop.
@@ -254,14 +248,14 @@ The \texttt{count(group)} sub-routine involves computing a matrix of counts for 
 This algorithm is implemented in scikit learn, and has overall $O(N\log N+K^2SG)$ time, $O(N+KS+SG)$ memory complexity (Wasikowski algorithm in Table~\ref{tab:complexity})
 
 \subsection{Proposed online counting algorithm for reduced memory complexity}
-
+\label{sec:online}
 The previous algorithm’s $O(SG)$ memory complexity can be prohibitive if there are a large number of strata and groups.
 We propose to sort all data rows by group, so the for loop over groups becomes a for loop over data rows, and the \texttt{count(group)} sub-routine computes a vector of strata counts for the current group (no need for a matrix of counts for every group and stratum).
 This proposed online counting algorithm can be used with the previous heuristic (Wasikowski-L in Table~\ref{tab:complexity}), and with our proposed squared error minimization heuristic (RSS in Table~\ref{tab:complexity}).
-Both have no more $O(SG)$ term in memory complexity (Table~\ref{tab:complexity}), so can be used with a large number of strata and groups.
+Both are the first such algorithms with no $O(SG)$ term in memory complexity (Contribution~2), which permits new applications of these algorithms to data with a large number of strata and groups.
 \subsection{Proposed RSS minimization for reduced time complexity}
-
-The main idea of the proposed algorithm is to minimize the Residual Sum of Squares (RSS) between the ideal and actual row counts per fold/stratum.
+\label{sec:RSS-algo}
+The main new idea of the proposed algorithm is to minimize the Residual Sum of Squares (RSS) between the ideal and actual row counts per fold/stratum (Contribution~3).
 \subsubsection{Proposed Sort() sub-routine}
 
 For each row $i\in\{1,\dots,N\}$, we have a stratum $s_i\in\{1,\dots,S\}$.
@@ -528,6 +522,8 @@ stratify: logical, keep outcome proportions similar across folds. For
 We implemented our proposed algorithms in C++ for time and memory efficiency in large data.
 TODO
 \section{Results}
+\label{sec:results}
+In this section, we present systematic comparisons with previous algorithms and software, in terms of features, empirical fold assignment accuracy and computation time in four real data sets (Contribution~5).
 
 \subsection{Data sets}
 
