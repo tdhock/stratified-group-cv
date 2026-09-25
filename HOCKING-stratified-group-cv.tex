@@ -257,7 +257,7 @@ Both are the first such algorithms with no $O(SG)$ term in memory complexity (Co
 \label{sec:RSS-algo}
 The main new idea of the proposed algorithm is to minimize the Residual Sum of Squares (RSS) between the ideal and actual row counts per fold/stratum (Contribution~3).
 \subsubsection{Proposed Sort() sub-routine}
-
+\label{sec:proposed-sort}
 For each row $i\in\{1,\dots,N\}$, we have a stratum $s_i\in\{1,\dots,S\}$.
 The algorithm begins by counting the number of rows in each stratum, then dividing by the number of folds, to obtain the ideal number of rows which could appear in each fold.
 For each stratum $\sigma\in\{1,\dots,S\}$, the ideal number of rows is
@@ -268,61 +268,7 @@ I[s_i = \sigma]/K,
 where $I[\cdot]$ is the indicator function (1 if argument is true, 0 otherwise).
 Table~\ref{tab:counts} (ideal row) shows $n^*_\sigma$ values for $K=4$ fold cross-validation in four real data sets.
 
-The proposed algorithm uses the RSS of each group in the Sort() sub-routine (min RSS assigned first).
-To compute the RSS for each group, we first compute $c_1,\dots,c_S $, the counts of rows in each stratum for the current group, \texttt{count(group)} in the pseudo-code.
-Then we define the RSS for that group as the squared error between ideal and group counts, summed over strata,
-%\begin{equation}
-$
-\sum_{\sigma\in\{1,\dots,S\}}
-(c_{\sigma} - n^*_\sigma)^2.
-$
-%\end{equation}
-If there are two groups with the same RSS value, we break ties using the number of rows in that group,
-$
-\sum_{\sigma\in\{1,\dots,S\}}
-c_{\sigma},
-$
-and do a third level of tie-breaking with the weighted sum,
-$
-\sum_{\sigma\in\{1,\dots,S\}}
-c_{\sigma}n^*_\sigma.
-$
-These sorting rules can be justified as analogous to the ``pack larger bins first'' heuristic (TODO citation).
 
-\subsubsection{Proposed greedy fold assignment}
-
-Our proposed \texttt{get\_best\_fold()} sub-routine is defined as follows.
-For each stratum $\sigma$ and fold $\phi\in\{1,\dots,K\}$, let $\hat n_{\sigma,\phi}$ be the number of data with that stratum assigned to that fold (\texttt{count\_matrix} in the pseudo-code).
-We propose to find a fold assignment which minimizes the residual sum of squares,
-\begin{equation}
-\text{RSS}=
-\sum_{\sigma\in\{1,\dots,S\}}
-\sum_{\phi\in\{1,\dots,K\}}
-(\hat n_{\sigma,\phi} - n^*_\sigma)^2.
-\end{equation}
-
-\begin{table*}[t]
-  \centering
-  \begin{tabular}{c|crccc|crrccc}
-    & \multicolumn{5}{c|}{Sort by RSS} &\multicolumn{6}{c}{Proposed: Sort by RSS, -Nrow, -Wsum} \\
-    &counts&     &&\multicolumn{2}{c|}{total counts in}&counts& & &&\multicolumn{2}{c}{total counts in}\\
-    iteration&  in group&   RSS &   fold& fold1 & fold2  &in group&Nrow & Wsum&fold& fold1 & fold2\\
-    \hline
-1&    5,3&     5    &     1 &   5,3 &     & 5,3    &  8  &22.5 & 1 &   5,3 &    \\
-2&    1,2&    34    &     2 &   5,3 &   1,2  & 3,0    &  3  & 9.0 & 2 &   5,3 &   3,0\\
-3&    1,2&    34    &     2 &   5,3 &   2,4  & 1,2    &  3  & 8.0 & 2 &   5,3 &   4,2\\
-4&    1,2&    34    &     2 &   5,3 &   3,6  & 1,2    &  3  & 8.0 & 2 &   5,3 &   5,4\\
-5&    3,0&    34    &     2 &   5,3 &   6,6  & 1,2    &  3  & 8.0 & 1 &   6,5 &   5,4\\
-6&    1,1&    41    &     1 &   6,4 &   6,6  & 1,1    &  2  & 5.5 & 2 &   6,5 &   6,5
-  \end{tabular}
-  \caption{
-    Demonstrating proposed tie-breaking algorithm with $N=22$ rows, $G=6$ groups, $S=2$ strata, and $K=2$ folds.
-    Counts columns show numbers of rows per stratum, for example 5,3 means 5 rows in first stratum and 3 rows in second stratum.
-    \textbf{Left:} sorting only by increasing RSS can assign group 3,0 in iteration 5, which results in a non-ideal fold assignment.
-    \textbf{Right:} sorting by increasing RSS, then tie-breaking by decreasing Nrow and Wsum, assigns group 3,0 in iteration 2, which results in ideal fold assignment.
-  }
-  \label{tab:ties}
-\end{table*}
 
 \begin{table*}[ht]
   \centering
@@ -333,7 +279,7 @@ We propose to find a fold assignment which minimizes the residual sum of squares
    & \multicolumn{2}{c|}{rows in}& \multicolumn{2}{c|}{rows in}& \multicolumn{5}{c|}{rows in}&\multicolumn{2}{c|}{rows in}\\
 Algo. fold & s1 & s2 & s1 & s2 & s1 & s2 & s3 & s4 & s5 & s1 & s2 \\ 
   \hline
-  ideal   & 49 & 62 & 168.5 & 1320.5 & 102.5 & 772.5 & 814.75 & 1009.25 & 1049.25 & 9176.25 &52945 \\ 
+  ideal per fold   & 49 & 62 & 168.5 & 1320.5 & 102.5 & 772.5 & 814.75 & 1009.25 & 1049.25 & 9176.25 &52945 \\ 
   \hline
 RSS 1 & \textcolor{red}{48} & 64 & \textcolor{red}{168}\textcolor{white}{.0} & 1478\textcolor{white}{.0} & 102\textcolor{white}{.0} & 772\textcolor{white}{.0} & 815\textcolor{white}{.00} & 1009\textcolor{white}{.00} & \textcolor{red}{1050}\textcolor{white}{.00} & 9177\textcolor{white}{.00} & \textcolor{red}{52945} \\ 
   proposed 2 & \textcolor{red}{50} & 62 & \textcolor{red}{169}\textcolor{white}{.0} & 1268\textcolor{white}{.0} & 103\textcolor{white}{.0} & 772\textcolor{white}{.0} & 814\textcolor{white}{.00} & 1010\textcolor{white}{.00} & \textcolor{red}{1049}\textcolor{white}{.00} & 9176\textcolor{white}{.00} & \textcolor{red}{52945} \\ 
@@ -359,6 +305,41 @@ RSS 1 & \textcolor{red}{48} & 64 & \textcolor{red}{168}\textcolor{white}{.0} & 1
   Overall the proposed RSS and previous Wasikowski algorithms gave similar results (both significantly better than random baseline).
 }
 \end{table*}
+
+The proposed algorithm uses the RSS of each group in the Sort() sub-routine (min RSS assigned first).
+To compute the RSS for each group, we first compute $c_1,\dots,c_S $, the counts of rows in each stratum for the current group, \texttt{count(group)} in the pseudo-code.
+Then we define the RSS for that group as the squared error between ideal and group counts, summed over strata,
+%\begin{equation}
+$
+\sum_{\sigma\in\{1,\dots,S\}}
+(c_{\sigma} - n^*_\sigma)^2.
+$
+%\end{equation}
+If there are two groups with the same RSS value, we break ties using the number of rows in that group,
+$
+\sum_{\sigma\in\{1,\dots,S\}}
+c_{\sigma},
+$
+and do a third level of tie-breaking with the weighted sum,
+$
+\sum_{\sigma\in\{1,\dots,S\}}
+c_{\sigma}n^*_\sigma.
+$
+These sorting rules can be justified as analogous to the ``pack larger bins first'' heuristic (TODO citation).
+In Section~\ref{sec:synthetic-sort}, we propose a synthetic data set to illustrate the utility of these sorting rules.
+
+\subsubsection{Proposed greedy fold assignment}
+
+Our proposed \texttt{get\_best\_fold()} sub-routine is defined as follows.
+For each stratum $\sigma$ and fold $\phi\in\{1,\dots,K\}$, let $\hat n_{\sigma,\phi}$ be the number of data with that stratum assigned to that fold (\texttt{count\_matrix} in the pseudo-code).
+We propose to find a fold assignment which minimizes the residual sum of squares,
+\begin{equation}
+\text{RSS}=
+\sum_{\sigma\in\{1,\dots,S\}}
+\sum_{\phi\in\{1,\dots,K\}}
+(\hat n_{\sigma,\phi} - n^*_\sigma)^2.
+\end{equation}
+
 
 The algorithm starts with all $\hat n_{\sigma,\phi}=0$ and then assigns a fold to one group at a time.
 We propose assign the group to the fold that minimizes the RSS after assignment,
@@ -408,7 +389,28 @@ We propose using~(\ref{eq:k*}) for the \texttt{get\_best\_fold()} sub-routine in
 The proposed RSS minimization procedure~(\ref{eq:k*}) has a sum over $S$ terms inside a min over $K$ terms, yielding a  $O(SK)$ time  \texttt{get\_best\_fold()} sub-routine.
 Comparing to the previous Wasikowski algorthm, the proposed RSS minimization is asymptotically faster (linear rather than quadratic in the number of folds $K$).
 The overall complexity of the proposed RSS minimization algorithm is therefore $O(N\log N+KSG)$ time and $O(N+KS)$ memory (Table~\ref{tab:complexity}).
-
+\begin{table*}[t]
+  \centering
+  \begin{tabular}{c|crccc|crrccc}
+    & \multicolumn{5}{c|}{Sort by RSS} &\multicolumn{6}{c}{Proposed: Sort by RSS, -Nrow, -Wsum} \\
+    &counts&     &&\multicolumn{2}{c|}{total counts in}&counts& & &&\multicolumn{2}{c}{total counts in}\\
+    iteration&  in group&   RSS &   fold& fold1 & fold2  &in group&Nrow & Wsum&fold& fold1 & fold2\\
+    \hline
+1&    5,3&     5    &     1 &   5,3 &     & 5,3    &  8  &45 & 1 &   5,3 &    \\
+2&    1,2&    34    &     2 &   5,3 &   1,2  & 3,0    &  3  & 18 & 2 &   5,3 &   3,0\\
+3&    1,2&    34    &     2 &   5,3 &   2,4  & 1,2    &  3  & 16 & 2 &   5,3 &   4,2\\
+4&    1,2&    34    &     2 &   5,3 &   3,6  & 1,2    &  3  & 16 & 2 &   5,3 &   5,4\\
+5&    3,0&    34    &     2 &   5,3 &   6,6  & 1,2    &  3  & 16 & 1 &   6,5 &   5,4\\
+6&    1,1&    41    &     1 &   6,4 &   6,6  & 1,1    &  2  & 11 & 2 &   6,5 &   6,5
+  \end{tabular}
+  \caption{
+    Demonstrating proposed tie-breaking algorithm with $N=22$ rows, $G=6$ groups, $S=2$ strata, and $K=2$ folds.
+    Counts columns show numbers of rows per stratum, for example [5,3] means 5 rows in first stratum and 3 rows in second stratum.
+    \textbf{Left:} sorting only by increasing RSS can assign group [3,0] in iteration 5, which results in a non-ideal fold assignment.
+    \textbf{Right:} sorting by increasing RSS, then tie-breaking by decreasing Nrow and Wsum, assigns group [3,0] in iteration 2, which results in ideal fold assignment.
+  }
+  \label{tab:ties}
+\end{table*}
 \begin{table*}[t]
   \centering
   \begin{tabular}{c|cccccc|cccccc}
@@ -457,73 +459,59 @@ The overall complexity of the proposed RSS minimization algorithm is therefore $
     \label{fig:Laribi-refs}
 \end{figure*}
 
-\subsection{Proposed sort method and tie-breaking rules}
+% \subsection{Implementation details}
+% We implemented our proposed algorithms in C++ for time and memory efficiency in large data.
+% TODO
 
-This equation assigns the fold ID which results in min RSS.
-If there is more than one fold with the same RSS value, then we tie-break by minimizing the amount past the ideal.
-For example, if ideal is 100, then 99 should be preferred over 101 (even though both have same RSS).
+\section{Synthetic data results}
+To demonstrate the advantages of our new algorithm, we propose synthetic data sets to use as test cases (Contribution~4).
 
-Each group is represented by a vector of counts, one element per stratum.
-For example with 3 strata, two count vectors are [ 3, 3, 2 ] and [ 0, 1, 0 ].
-Previous sort method uses SD, so [ 3, 3, 2 ] is tied with [ 0, 1, 0 ].
-However a common heuristic for bin packing is to pack larger items first.
-The proposed sort uses RSS of group count vector: sum of squared differences between actual and ideal counts.
-The ideal counts are always large, so [ 3, 3, 2 ] has smaller RSS, and our proposed algorithm therefore inserts it before [ 0, 1, 0 ], as desired.
+\subsection{Test case to justify proposed sort}
 
-[ 1, 0 ] has variance 0.5 so is inserted before [ 1, 1 ] and [ 10, 10 ], both variance 0.
-But we want to insert [ 10, 10 ] first (pack larger items first).
-Our algo achieves this desired insertion order: [ 10, 10 ] then [ 1, 1 ] then [ 1, 0 ].
-The proposed algo results in better fold assignments for these simple examples.
+In this section we propose an synthetic data set where the tie-breaking rules in the proposed Sort() sub-routine (Section~\ref{sec:proposed-sort}) are necessary for optimal fold assignment.
+It involves $N=22$ data with $G=6$ groups, $S=2$ strata, and $K=2$ folds (Table~\ref{tab:ties}).
+We use the notation $[c_1,c_2]$ for $c_1$ rows in stratum 1, and $c_2$ rows in stratum 2.
+The groups are [1,1], [3,0],  [5,3], and three groups with the counts [1,2].
+The total is [12,10], so the ideal is $n^*=[6,5]$ per fold.
+The groups [3,0] and [1,2] are tied for the first two sorting criteria: RSS=34 and 3 data.
+To third level of tie-breaking should prefer the group [3,0] which has more rows than [1,2] in the larger first stratum.
+Our proposed third criterion is the weighted sum,
+$\text{Wsum}=
+\sum_{\sigma\in\{1,\dots,S\}}
+c_{\sigma}n^*_\sigma,
+$
+which is 18 for [3,0] and 16 for [1,2].
+Using this tie-breaking rule in these data, the greedy heuristic always obtains ideal counts of [6,5] for both folds (Table~\ref{tab:ties}, right).
+Omitting this rule can result in sub-optimal counts: one fold with [6,4] and the other with [6,6] (Table~\ref{tab:ties}, left).
 
-% \subsection{Complexity analysis}
-% We assume there are $N$ data, $K$ folds, $G$ groups, and $S$ strata.
-% All algorithms begin by sorting the groups, typically $O(N\log N)$ time.
+\subsection{Test case to justify minimizing RSS}
 
-% The previous Wasikowski algorithm begins by computing a $G\times S$ matrix of counts per group and stratum, requiring $O(GS)$ time and memory.
-% For large $G$ and $S$, this large count matrix will be very sparse (almost all entries zero), which is inefficient.
-% Because the large size of this matrix could be prohibitive, we propose to modify the Wasikowski algorithm to avoid this inefficiency.
-% Our proposed memory-efficient variant is called Wasikowski-L in Table~\ref{tab:complexity} (L for Limited memory).
-% We propose to first sort the data by group, then compute and store a count vector for only the current group, thus reducing the memory requirement to $O(S)$, which can be ignored since it is smaller than $O(N)$ (Table~\ref{tab:complexity}, proposed rows, Memory column).
+% This equation assigns the fold ID which results in min RSS.
+% If there is more than one fold with the same RSS value, then we tie-break by minimizing the amount past the ideal.
+% For example, if ideal is 100, then 99 should be preferred over 101 (even though both have same RSS).
 
-% The previous Wasikowski algorithm maintains a $K\times S$ matrix of counts per fold and stratum.
-% The \texttt{get\_best\_fold()} method considers putting the new group in each of the $K$ folds, then computes SD over folds for each stratum, then mean of SD values over strata.
-% The \texttt{get\_best\_fold()} method is therefore $O(K^2 S)$ time, and the overall algorithm is therefore $O(N\log N + K^2 G S)$ time (Table~\ref{tab:complexity}, Wasikowski rows, Time column).
+% Each group is represented by a vector of counts, one element per stratum.
+% For example with 3 strata, two count vectors are [ 3, 3, 2 ] and [ 0, 1, 0 ].
+% Previous sort method uses SD, so [ 3, 3, 2 ] is tied with [ 0, 1, 0 ].
+% However a common heuristic for bin packing is to pack larger items first.
+% The proposed sort uses RSS of group count vector: sum of squared differences between actual and ideal counts.
+% The ideal counts are always large, so [ 3, 3, 2 ] has smaller RSS, and our proposed algorithm therefore inserts it before [ 0, 1, 0 ], as desired.
 
-\subsection{Simple example where RSS beats Wasikowski}
+% [ 1, 0 ] has variance 0.5 so is inserted before [ 1, 1 ] and [ 10, 10 ], both variance 0.
+% But we want to insert [ 10, 10 ] first (pack larger items first).
+% Our algo achieves this desired insertion order: [ 10, 10 ] then [ 1, 1 ] then [ 1, 0 ].
+% The proposed algo results in better fold assignments for these simple examples.
 
-In this section, we give a simple example data set to show the advantage of the proposed RSS minimization algorithm.
-Consider a simple data set with $S=2$ strata, $G=5$ groups, $N=12$ data, and $K=3$ fold cross-validation.
-The five groups are [ 1, 3 ],  [ 1, 2 ],  [ 0, 2 ],  [ 1, 1 ],  [ 0, 1 ], which implies an ideal of [ 1, 3 ].
-For these data, the previous method can result in sub-optimal assignment (depending on random tie-breaking).
-In contrast the proposed RSS minimization always obtains optimal assignment in these data.
+We propose the following synthetic test case to show the advantage of the proposed algorithm (sort groups by RSS increasing), relative to the previous Wasikowski algorithm (sort by variance decreasing).
+Consider a simple data set with $S=2$ strata, $G=5$ groups, $N=12$ data, and $K=3$ fold cross-validation (Table~\ref{tab:rss-var}).
+Consistent with the ``pack larger bins first'' heuristic, the proposed algorithm sorts the five groups in the order [1,3], [1,2], [0,2], [1,1], [0,1].
+The previous Wasikowski sorts in an order that is not consistent with the number of rows: [1,2] and [0,1] both have variance 0.5, so are assigned folds before [1,1] (zero variance).
+For these data, the proposed RSS minimization always obtains ideal counts per fold, [1,3] (Table~\ref{tab:rss-var}, left).
+In contrast, the previous method can result in sub-optimal counts: [1,4],[1,3],[1,2] (Table~\ref{tab:rss-var}, right).
 
-
-\subsection{Tie-breaking}
-
-In this section we show an example where the tie-breaking rules are necessary for optimal fold assignment.
-It involves $N=22$ data with $G=6$ groups, $S=2$ strata, and $K=2$ folds.
-The groups are [ 1, 1 ],  [ 3, 0 ],  [ 5, 3 ], and three groups with the counts [ 1, 2 ].
-The total is [ 12, 10 ], so the ideal is [ 6, 5 ].
-For the groups [ 3, 0 ] and [ 1, 2 ], we have RSS=34 and 3 data.
-To tie-break, we would like to first insert a group with more data in larger strata (pack larger bins first).
-In this case, that is [ 3, 0 ].
-We propose to compute freq = mean(ideal*group), which is 9 for [ 3, 0 ] and 8 for [ 1, 2 ].
-Using this tie-breaking rule, the greedy heuristic obtains the optimal fold assignment in these data.
-In contrast, the previous rule results in a sub-optimal fold assignment.
-
-\verb|bioLeak::make_split_plan|
-stratify: logical, keep outcome proportions similar across folds. For
-          grouped modes, stratification is applied at the group level
-          (by majority class per group) if 'outcome' is provided;
-          otherwise ignored.
-          
-
-\subsection{Implementation details}
-We implemented our proposed algorithms in C++ for time and memory efficiency in large data.
-TODO
-\section{Results}
+\section{Real data results}
 \label{sec:results}
-In this section, we present systematic comparisons with previous algorithms and software, in terms of features, empirical fold assignment accuracy and computation time in four real data sets (Contribution~5).
+In this section, we present systematic comparisons with previous algorithms and software, in terms of features, empirical fold assignment accuracy, and computation time in four real data sets (Contribution~5).
 
 \subsection{Data sets}
 
@@ -533,14 +521,18 @@ Satellite image segmentation, each labeled region is a group.
 
 Pet adoption data, each rescuer is a group.
 
-\subsection{Algorithms}
+\subsection{Baseline algorithms}
 
 We compared the proposed RSS minimization heuristic to five other algorithms.
 First, the random baseline is the trivial algorithm which assigns each group to a random fold (no leakage, but high error rate).
 Second, we ran the Wasikowski variance minimization heuristic, which has a Python/numpy implementation in scikit-learn.
 We re-implemented this algorithm in C++ for a more controlled comparison with our proposed C++ code for RSS minimization.
 We also ran three other R packages with functions for computing fold assignment using stratification and groups:
-
+% \verb|bioLeak::make_split_plan|
+% stratify: logical, keep outcome proportions similar across folds. For
+%           grouped modes, stratification is applied at the group level
+%           (by majority class per group) if 'outcome' is provided;
+%           otherwise ignored.
 \begin{itemize}
 \item \verb|bioLeak::make_split_plan(mode="subject_grouped", stratify=TRUE)|,
 \item \verb|rsample::group_vfold_cv(balance="observations")|, 
