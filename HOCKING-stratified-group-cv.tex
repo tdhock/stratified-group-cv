@@ -155,7 +155,7 @@ In the AZtrees data, one random run of the proposed heuristic without stratifica
 With stratification, the proposed heuristic gave an ideal result: 1985--1986 rows per fold, 1760--1761 negative labels per fold, 224--225 positive labels per fold, and no data leakage (Table~\ref{tab:counts} Case E).
 
 Our proposed heuristic is inspired by previous work by a Kaggle competitor, who proposed a different heuristic algorithm, based on minimizing the variance between row counts in each fold \citep{Wasikowski2019}.
-We refer to this previous algorithm as the Wasikowski heuristic, which is used in the StratifiedGroupKFold class, available in scikit-learn since version 0.24.2 (TODO cite release notes 2020).
+We refer to this previous algorithm as the Wasikowski heuristic, which is used in the StratifiedGroupKFold class, available in scikit-learn since version 1.0 \citep{pr18649,whatsnew}.
 However, close inspection of the Wasikowski heuristic reveals that it is relatively inefficient, $O(K^2 SG)$ time and $O(SG)$ memory for $K$ folds, $G$ groups, and $S$ strata (Table~\ref{tab:complexity}).
 The quadratic time complexity can be prohibitive for a large number of folds $K$, and the memory complexity can be prohibitive if both $S$ and $G$ are large.
 This paper proposes new heuristic algorithms with reduced asymptotic time and memory complexity (Table~\ref{tab:complexity}).
@@ -172,23 +172,19 @@ Finally, we present systematic comparisons with 8 previous software packages, in
 
 \section{Related Work}
 \label{sec:related}
-Similar to 
-\url{https://en.wikipedia.org/wiki/Bin_packing_problem}
-but with a fixed number of bins.
-
-Quoting from that article:
-``In the bin packing problem, the size of the bins is fixed and their number can be enlarged (but should be as small as possible).
-In the multiway number partitioning problem, \url{https://en.wikipedia.org/wiki/Multiway_number_partitioning} the number of bins is fixed and their size can be enlarged.''
-\citet{Pop2013} proposed a heuristic (genetic algorithm and local search) to solve this multidimensional multi-way number partitioning problem.
-
-\citet{hayes2002computing} called it the ``easiest hard problem'' and discussed the example of picking team members in a game like soccer. 
-
 
 A typical application of stratification is in classification problems, where the stratum variable is defined as the same as the label/output variable to predict.
 Other strata variables correspond to the domain/subset, when evaluating domain adaptation algorithms (TODO citation), and when estimating similarity of data subsets for learning purposes \citep{Hocking2026soak}.
 
+Assigning groups of data to cross-validation folds is similar to the bin packing problem, which is NP-hard, but with fast heursitic algorithms that have reasonable approximation error bounds \citep{Johnson2016}.
+Two classic algorithms are ``first fit decreasing'' and ``best fit decreasing,'' both of which sort the list of objects by size, and have asymptotic worst case ratios of 11/9 (amount of more bins used than necessary).
+Whereas bin packing has a variable number of bins used for $N$ items, cross-validation has a fixed number of $K$ bins, so is a different NP-hard problem: multiway number partitioning, which has been called the ``easiest hard problem'' \citep{hayes2002computing}.
+%With more than one stratum, this 
+Simple heuristics for this problem are similar to bin packing: sort by size and then use greedy assignment to the emptiest bin.
+Other heuristics for this problem include genetic algorithms and local search \citet{Pop2013}, which are too complex for the cross-validation fold assignment problem.
 
-Wasikowski (sklearn.model\_selection.StratifiedGroupKFold)
+We provide empirical comparisons with previous algorithms and software for cross-validation fold assignment in scikit-learn \citep{sklearn2011}, \texttt{bioLeak} \citep{bioLeak2026}, \texttt{rsample} \citep{rsample2026}, and \texttt{origami} \citep{Coyle2018,origami2026}.
+
 
 %TODO discuss all methods in Table~\ref{tab:related}.
 
@@ -250,7 +246,7 @@ The previous Wasikowski algorithm uses the following choices for the sub-routine
 The \texttt{Sort()} sub-routine uses the variance of the strata counts (max variance assigned first), which has some drawbacks that are discussed in section TODO.
 The $O(K^2 S)$ time \texttt{get\_best\_fold()} sub-routine loops over possible folds, adding the current group’s strata counts to current fold’s column of \texttt{count\_matrix}, which is then summarized by computing standard deviation (SD) over folds for each stratum, and finally mean of the SD values over strata.
 The \texttt{count(group)} sub-routine involves computing a matrix of counts for each stratum and group, which takes $O(SG)$ memory.
-This algorithm is implemented in scikit learn, and has overall $O(N\log N+K^2SG)$ time, $O(N+KS+SG)$ memory complexity (Wasikowski algorithm in Table~\ref{tab:complexity})
+This algorithm is implemented in scikit-learn \citep{sklearn2011}, and has overall $O(N\log N+K^2SG)$ time, $O(N+KS+SG)$ memory complexity (Wasikowski algorithm in Table~\ref{tab:complexity})
 
 \subsection{Proposed online counting algorithm for reduced memory complexity}
 \label{sec:online}
@@ -540,9 +536,10 @@ There are $S=5$ strata/labels: categories of adoption speed.
 
 We compared the proposed RSS algorithm to five others.
 First, the random baseline is the trivial algorithm which assigns each group to a random fold (no leakage, but high error rate, case C in Figure~\ref{tab:counts}).
-Second, we ran the previous Wasikowski algorithm, which has a Python/numpy implementation in scikit-learn.
+Second, we ran the previous Wasikowski algorithm, which has a Python/numpy implementation in scikit-learn \citep{sklearn2011}.
 We re-implemented this algorithm in C++ for a more controlled comparison with our proposed C++ code for RSS minimization.
-We also ran three R packages with functions for computing fold assignment using stratification and groups: \texttt{bioLeak}, \texttt{rsample}, \texttt{origami}.
+We also ran three packages in R \citep{R2026} with functions for computing fold assignment using stratification and groups: 
+\texttt{bioLeak} version 0.3.8 \citep{bioLeak2026}, \texttt{rsample} version 1.3.2 \citep{rsample2026}, \texttt{origami} version 1.0.8 \citep{Coyle2018,origami2026}.
 % \verb|bioLeak::make_split_plan|
 % stratify: logical, keep outcome proportions similar across folds. For
 %           grouped modes, stratification is applied at the group level
