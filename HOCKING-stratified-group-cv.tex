@@ -90,7 +90,9 @@ Strata are classes of rows for which the relative proportions should be preserve
 Examples of strata include the output label in classification problems, and the domain/subset variable in domain adapation evaluation (TODO citation).
 To understand why our proposed algorithm is useful, we first discuss the issues that arise when unstructured cross-validation is used in structured data.
 
-\subsubsection{Cross-validation with neither stratification nor groups}
+\subsubsection{
+  % Cross-validation with neither
+  Neither stratification nor groups}
 
 Because the goal of data-splitting is to estimate prediction error in the same distributional setting as the original data set, it is important for the splitting procedure to generate train/test sets which are representative of the original data.
 In an unstructured data set, we would at least like to ensure that each test set has the same number of rows.
@@ -113,7 +115,9 @@ For the AZtrees example, this results in 1985--1986 rows per fold (Table~\ref{ta
     \label{tab:complexity}
 \end{table*}
 
-\subsubsection{Cross-validation with stratification but no groups}
+\subsubsection{
+  % Cross-validation with
+  Stratification but no groups}
 
 However, the random shuffling in unstructured cross-validation can cause substantial variation between class frequencies, which is undesirable.
 For the AZtrees example, one random shuffle gave 1749--1772 Negative rows and 213--237 Positive rows (Table~\ref{tab:counts} Case A Negative and Positive).
@@ -122,7 +126,8 @@ For a stratum/class with $c$ rows, we repeat the fold values ($1, \dots, K, 1, \
 For the AZtrees example, stratification results in 1760--1761 negative rows per fold, and 224--225 positive rows per fold.
 (Table~\ref{tab:counts} Case B Negative and Positive).
 
-\subsubsection{Cross-validation with groups but no stratification}
+\subsubsection{%Cross-validation with
+  Groups but no stratification}
 
 In a structured data set with a grouping variable, the data-splitting technique should work on groups instead of rows, to avoid data leakage (TODO citation).
 For example, the AZtrees data were created by drawing polygons on a map (TODO citation).
@@ -162,7 +167,7 @@ This paper presents five new research contributions related to cross-validation 
 After reviewing related research (Section~\ref{sec:related}), we present a new abstract characterization of the previous Wasikowski algorithm, which allows understanding and improving three sub-routines (Contribution~1, Section~\ref{sec:pseudo-code}).
 Next, we propose a new online counting algorithm, with asymptotically less memory usage (Contribution~2, Section~\ref{sec:online}), which permits new applications to data sets with large numbers of strata and groups.
 We propose a new RSS minimization algorithm which is asymptotically faster than the previous Wasikowski algorithm (Contribution~3, Section~\ref{sec:RSS-algo}).
-To demonstrate the advantages of our new algorithm, we propose two simple synthetic data sets to use as test cases (Contribution~4, Section~\ref{sec:synthetic-tests}).
+To demonstrate the advantages of our new algorithm, we propose synthetic data sets to use as test cases (Contribution~4, Section~\ref{sec:synthetic-tests}).
 Finally, we present systematic comparisons with 8 previous software packages, in terms of features, empirical fold assignment accuracy and computation time in four real data sets (Contribution~5, Section~\ref{sec:results}).
 
 \section{Related Work}
@@ -306,7 +311,7 @@ RSS 1 & \textcolor{red}{48} & 64 & \textcolor{red}{168}\textcolor{white}{.0} & 1
 }
 \end{table*}
 
-The proposed algorithm uses the RSS of each group in the Sort() sub-routine (min RSS assigned first).
+The proposed Sort() sub-routine sorts groups by RSS (increasing).
 To compute the RSS for each group, we first compute $c_1,\dots,c_S $, the counts of rows in each stratum for the current group, \texttt{count(group)} in the pseudo-code.
 Then we define the RSS for that group as the squared error between ideal and group counts, summed over strata,
 %\begin{equation}
@@ -315,18 +320,18 @@ $
 (c_{\sigma} - n^*_\sigma)^2.
 $
 %\end{equation}
-If there are two groups with the same RSS value, we break ties using the number of rows in that group,
+If there are two groups with the same RSS value, we break ties by sorting using the number of rows in that group (decreasing),
 $
 \sum_{\sigma\in\{1,\dots,S\}}
 c_{\sigma},
 $
-and do a third level of tie-breaking with the weighted sum,
-$
+and do a third level of tie-breaking by sorting by the weighted sum (decreasing),
+$\text{Wsum}=
 \sum_{\sigma\in\{1,\dots,S\}}
 c_{\sigma}n^*_\sigma.
 $
 These sorting rules can be justified as analogous to the ``pack larger bins first'' heuristic (TODO citation).
-In Section~\ref{sec:synthetic-sort}, we propose a synthetic data set to illustrate the utility of these sorting rules.
+In Section~\ref{sec:synthetic-tests}, we propose illustrative synthetic data to justify these sorting rules.
 
 \subsubsection{Proposed greedy fold assignment}
 
@@ -452,7 +457,7 @@ The overall complexity of the proposed RSS minimization algorithm is therefore $
     }\parbox{3.3in}{
       \input{Laribi2024-figure-rows-small-input}
     }
-    \vspace{-0.4in}
+    \vspace{-0.3in}
     \caption{Empirical timings of the greedy fold assignment step of the previous and proposed algorithms, implemented in C++ code, run on Laribi2024 data (colored curves for mean, shaded band for min/max over 10 timings).
       \textbf{Left:} timings as number of folds $K$ increases. Asymptotic reference curves (black), fit to largest empirical $K$ values, indicate that previous Wasikowski is $O(K^2)$, and proposed RSS is $O(K)$, as expected.
     \textbf{Right:} timings as number of data $N$ increases shows that RSS is $\approx 10$ times faster asymptotically.  }
@@ -464,27 +469,10 @@ The overall complexity of the proposed RSS minimization algorithm is therefore $
 % TODO
 
 \section{Synthetic data results}
-To demonstrate the advantages of our new algorithm, we propose synthetic data sets to use as test cases (Contribution~4).
+\label{sec:synthetic-tests}
+To justify our new algorithm, we propose synthetic data sets to use as test cases (Contribution~4).
 
-\subsection{Test case to justify proposed sort}
-
-In this section we propose an synthetic data set where the tie-breaking rules in the proposed Sort() sub-routine (Section~\ref{sec:proposed-sort}) are necessary for optimal fold assignment.
-It involves $N=22$ data with $G=6$ groups, $S=2$ strata, and $K=2$ folds (Table~\ref{tab:ties}).
-We use the notation $[c_1,c_2]$ for $c_1$ rows in stratum 1, and $c_2$ rows in stratum 2.
-The groups are [1,1], [3,0],  [5,3], and three groups with the counts [1,2].
-The total is [12,10], so the ideal is $n^*=[6,5]$ per fold.
-The groups [3,0] and [1,2] are tied for the first two sorting criteria: RSS=34 and 3 data.
-To third level of tie-breaking should prefer the group [3,0] which has more rows than [1,2] in the larger first stratum.
-Our proposed third criterion is the weighted sum,
-$\text{Wsum}=
-\sum_{\sigma\in\{1,\dots,S\}}
-c_{\sigma}n^*_\sigma,
-$
-which is 18 for [3,0] and 16 for [1,2].
-Using this tie-breaking rule in these data, the greedy heuristic always obtains ideal counts of [6,5] for both folds (Table~\ref{tab:ties}, right).
-Omitting this rule can result in sub-optimal counts: one fold with [6,4] and the other with [6,6] (Table~\ref{tab:ties}, left).
-
-\subsection{Test case to justify minimizing RSS}
+\subsection{Test case to justify sorting by RSS}
 
 % This equation assigns the fold ID which results in min RSS.
 % If there is more than one fold with the same RSS value, then we tie-break by minimizing the amount past the ideal.
@@ -503,41 +491,68 @@ Omitting this rule can result in sub-optimal counts: one fold with [6,4] and the
 % The proposed algo results in better fold assignments for these simple examples.
 
 We propose the following synthetic test case to show the advantage of the proposed algorithm (sort groups by RSS increasing), relative to the previous Wasikowski algorithm (sort by variance decreasing).
-Consider a simple data set with $S=2$ strata, $G=5$ groups, $N=12$ data, and $K=3$ fold cross-validation (Table~\ref{tab:rss-var}).
+Consider a data set with $S=2$ strata, $G=5$ groups, $N=12$ data, and $K=3$ fold cross-validation (Table~\ref{tab:rss-var}).
 Consistent with the ``pack larger bins first'' heuristic, the proposed algorithm sorts the five groups in the order [1,3], [1,2], [0,2], [1,1], [0,1].
 The previous Wasikowski sorts in an order that is not consistent with the number of rows: [1,2] and [0,1] both have variance 0.5, so are assigned folds before [1,1] (zero variance).
 For these data, the proposed RSS minimization always obtains ideal counts per fold, [1,3] (Table~\ref{tab:rss-var}, left).
 In contrast, the previous method can result in sub-optimal counts: [1,4],[1,3],[1,2] (Table~\ref{tab:rss-var}, right).
 
+\subsection{Test case to justify tie-breaking}
+
+In this section we propose an synthetic data set where the tie-breaking rules (Section~\ref{sec:proposed-sort}) are necessary for optimal fold assignment.
+It involves $N=22$ data with $G=6$ groups, $S=2$ strata, and $K=2$ folds (Table~\ref{tab:ties}).
+We use the notation $[c_1,c_2]$ for $c_1$ rows in stratum 1, and $c_2$ rows in stratum 2.
+The groups are [1,1], [3,0],  [5,3], and three groups with the counts [1,2].
+The total is [12,10], so the ideal is $n^*=[6,5]$ per fold.
+The groups [3,0] and [1,2] are tied for the first two sorting criteria: RSS=34 and 3 data.
+To third level of tie-breaking should prefer the group [3,0] which has more rows than [1,2] in the larger first stratum.
+Our proposed third criterion is the weighted sum,
+$\text{Wsum}=
+\sum_{\sigma\in\{1,\dots,S\}}
+c_{\sigma}n^*_\sigma,
+$
+which is 18 for [3,0] and 16 for [1,2].
+Using this tie-breaking rule in these data, the greedy heuristic always obtains ideal counts of [6,5] for both folds (Table~\ref{tab:ties}, right).
+Omitting this rule can result in sub-optimal counts: one fold with [6,4] and the other with [6,6] (Table~\ref{tab:ties}, left).
+
 \section{Real data results}
 \label{sec:results}
-In this section, we present systematic comparisons with previous algorithms and software, in terms of features, empirical fold assignment accuracy, and computation time in four real data sets (Contribution~5).
+We systematically compared with previous algorithms and software, in terms of features, empirical fold assignment accuracy, and computation time in four real data sets (Contribution~5).
 
 \subsection{Data sets}
 
-Medical data (respiratory in R), each patient is a group.
+We chose four data sets in order to represent a variety of different application areas of machine learning, over several orders of magnitude of size, from $N=444$ to $N=248,485$ rows.
 
-Satellite image segmentation, each labeled region is a group.
+We considered two medical data sets in which groups are patients and rows are medical visits, so grouped cross-validation is important to ensure accurate estimation of prediction error on new patients.
+The \textbf{respiratory} data have $N=444$ rows and $G=111$ groups for respiratory illness prediction, from the geepack package in R \citep{Halekoh2006}.
+The \textbf{Laribi2024} data from Zenodo \citep{Laribi2024} have $N=248,485$ rows and $G=123,646$ groups for one year mortality prediction at emergency room admission \citep{Laribi2025}.
+There are $S=2$ strata/labels: affected or not by illness/death.
 
-Pet adoption data, each rescuer is a group.
+In image segmentation, labels are often created using polygons, and each pixel in the polygon becomes a data row with the corresponding label.
+Using polygons as groups in cross-validation ensures accurate estimation of prediction error on new polygons.
+The \textbf{AZtrees} data have $N=5956$ rows and $G=189$ groups for predicting presence versus absence of trees in satellite images of Arizona \citep{Hocking2026soak} ($S=2$ strata).
+
+The previous Wasikowski algorithm was originally motivated by a Kaggle data set about pet adoption \citep{Wasikowski2019}.
+In the \textbf{PetAdoption} data, there are $N=14,993$ rows, each row is a pet, and pets are grouped by rescuer ($G=5595$ groups).
+There are $S=5$ strata/labels: categories of adoption speed.
 
 \subsection{Baseline algorithms}
 
-We compared the proposed RSS minimization heuristic to five other algorithms.
-First, the random baseline is the trivial algorithm which assigns each group to a random fold (no leakage, but high error rate).
-Second, we ran the Wasikowski variance minimization heuristic, which has a Python/numpy implementation in scikit-learn.
+We compared the proposed RSS algorithm to five others.
+First, the random baseline is the trivial algorithm which assigns each group to a random fold (no leakage, but high error rate, case C in Figure~\ref{tab:counts}).
+Second, we ran the previous Wasikowski algorithm, which has a Python/numpy implementation in scikit-learn.
 We re-implemented this algorithm in C++ for a more controlled comparison with our proposed C++ code for RSS minimization.
-We also ran three other R packages with functions for computing fold assignment using stratification and groups:
+We also ran three R packages with functions for computing fold assignment using stratification and groups: \texttt{bioLeak}, \texttt{rsample}, \texttt{origami}.
 % \verb|bioLeak::make_split_plan|
 % stratify: logical, keep outcome proportions similar across folds. For
 %           grouped modes, stratification is applied at the group level
 %           (by majority class per group) if 'outcome' is provided;
 %           otherwise ignored.
-\begin{itemize}
-\item \verb|bioLeak::make_split_plan(mode="subject_grouped", stratify=TRUE)|,
-\item \verb|rsample::group_vfold_cv(balance="observations")|, 
-\item \verb|origami::make_folds()|.
-\end{itemize}
+% \begin{itemize}
+% \item \verb|bioLeak::make_split_plan(mode="subject_grouped", stratify=TRUE)|,
+% \item \verb|rsample::group_vfold_cv(balance="observations")|, 
+% \item \verb|origami::make_folds()|.
+% \end{itemize}
 
 
 
@@ -556,7 +571,29 @@ We also ran three other R packages with functions for computing fold assignment 
 %     \end{tabular}
 %     \caption{Remove because redundant with figure?}
 %     \label{tab:placeholder}
-% \end{table}
+%   \end{table}
+
+\subsection{Accuracy of fold assignment}
+
+In order to compare fold assignment accuracy, we ran all six algorithms on all four data sets, using cross-validation with $K\in\{2,4,8\}$ folds, and ten random seeds.
+We expected the proposed algorithm to create near ideal fold assignments, similar to the previous heuristic.
+For $K=4$ folds and one random seed, Table~\ref{tab:counts} shows the counts obtained using four methods (ideal, proposed RSS, previous Wasikowski, random baseline).
+In agreement with our expectations, these results show that the proposed algorithm yields fold assignments with nearly ideal counts in all data sets, similar to the previous Wasikowski heuristic (both much better than random).
+
+For each run, we also computed and plotted the root mean squared error between the ideal and actual counts per fold/stratum (Figure~\ref{fig:several_Tasks}).
+In agreement with our expectations, we observed that proposed RSS and previous Wasikowski had comparably small error rates (sometimes one or the other slightly better, almost always much smaller error rates than random).
+The only exception was in AZtrees data with $K\in\{4,8\}$ folds, for which it is impossible to do much better than random, due to one large group with 1478 rows (which must be assigned to a single fold to avoid data leakage, resulting in a count larger than ideal if there are a large number of folds).
+The origami and rsample R packages require one strata per group, so could only be run in the AZtrees data, but gave error rates similar to random (with data leakage for origami).
+The bioLeak package ran in all data, but almost always yielded error rates much larger than the proposed RSS and previous Wasikowski algorithms.
+Overall, these results indicate that the proposed RSS algorithm provides state-of-the-art fold assignment accuracy for a variety of real data sets with groups and strata.
+
+\subsection{Empirical timings}
+
+We expected our proposed RSS algorithm to be asymptotically faster than the previous Wasikowski algorithm.
+We therefore ran empirical timings on the Laribi2024 data, varying number of folds $K$.
+We fit asymptotic references to the empirical timings (Figure~\ref{fig:Laribi-refs}, left), which indicated $O(K^2)$ time for the previous Wasikowski algorithm, and $O(K)$ time for the proposed RSS algorithm (as expected).
+We then varied number of rows $N$ (keeping $K=10$ folds constant), which gave a similar asymptotic slope on the log-log plot, but with the proposed RSS algorithm faster by a factor of about 10 (Figure~\ref{fig:Laribi-refs}, right).
+Overall, these empirical timings suggest that the proposed RSS algorithm is much faster than the previous Wasikowski algorithm.
 
 \section{Conclusions}
 
