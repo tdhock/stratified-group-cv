@@ -30,7 +30,7 @@
   Fold assignment is trivial with either stratification or grouping, but it is NP-hard with both stratification and grouping.
   Scikit-learn implements a heuristic that obtains reasonable fold assignments in this case, but its time and memory complexity can be prohibitive for large data.
   We propose a new heuristic algorithm with asymptotically less time and memory usage, that can be used on large data sets.
-  In an empirical analysis of four real data sets, the proposed algorithm provides comparable fold assignments, and is at least ten times faster than the previous algorithm.
+  In an empirical analysis of four real data sets, the proposed algorithm provides comparable fold assignments, and is asymptotically about ten times faster than the previous algorithm.
 \end{abstract} 
 
 \section{Introduction}
@@ -167,12 +167,12 @@ After reviewing related research (Section~\ref{sec:related}), we present a new a
 Next, we propose a new online counting algorithm, with asymptotically less memory usage (Contribution~2, Section~\ref{sec:online}), which permits new applications to data sets with large numbers of strata and groups.
 We propose a new RSS minimization algorithm which is asymptotically faster than the previous Wasikowski algorithm (Contribution~3, Section~\ref{sec:RSS-algo}).
 To demonstrate the advantages of our new algorithm, we propose synthetic data sets to use as test cases (Contribution~4, Section~\ref{sec:synthetic-tests}).
-Finally, we present systematic comparisons with 8 previous software packages, in terms of features, empirical fold assignment accuracy and computation time in four real data sets (Contribution~5, Section~\ref{sec:results}).
+Finally, we present systematic empirical comparisons with 5 baselines, in terms of fold assignment accuracy and computation time in four real data sets (Contribution~5, Section~\ref{sec:results}).
 
 \section{Related Work}
 \label{sec:related}
 
-A typical application of stratification is in classification problems, where the stratum variable is defined as the same as the label/output variable to predict.
+A typical application of stratification is in classification problems, where the stratum variable is defined as the label/output variable to predict.
 Other examples of stratification variables are domain/subset, when evaluating domain adaptation algorithms, and when estimating similarity of data subsets for learning purposes \citep{Hocking2026soak}.
 
 Assigning groups of data to cross-validation folds is similar to the bin packing problem, which is NP-hard, but with fast heursitic algorithms that have reasonable approximation error bounds \citep{Johnson2016}.
@@ -217,7 +217,7 @@ We provide empirical comparisons with previous algorithms and software for cross
 \section{Algorithms}
 
 Assume we have a data set with $N$ rows in $S$ strata and $G$ groups.
-We want to perform $K$-fold cross-validation, such that data in each group are assigned the same fold ID (no data leakage), and the strata proportions in are approximately equal across folds.
+We want to perform $K$-fold cross-validation, such that data in each group are assigned the same fold ID (no data leakage), and the strata proportions are approximately equal across folds.
 
 \subsection{Pseudo-code for greedy fold assignment}
 \label{sec:pseudo-code}
@@ -244,7 +244,7 @@ The previous Wasikowski algorithm uses the following choices for the sub-routine
 The \texttt{Sort()} sub-routine uses the variance of the strata counts (max variance assigned first), which has some drawbacks that are discussed in Section~\ref{sec:synthetic-tests}.
 The $O(K^2 S)$ time \texttt{get\_best\_fold()} sub-routine loops over possible folds, adding the current group’s strata counts to current fold’s column of \texttt{count\_matrix}, which is then summarized by computing standard deviation (SD) over folds for each stratum, and finally mean of the SD values over strata.
 The \texttt{count(group)} sub-routine involves computing a matrix of counts for each stratum and group, which takes $O(SG)$ memory.
-This algorithm is implemented in scikit-learn \citep{sklearn2011}, and has overall $O(N\log N+K^2SG)$ time, $O(N+KS+SG)$ memory complexity (Wasikowski algorithm in Table~\ref{tab:complexity})
+This algorithm is implemented in scikit-learn \citep{sklearn2011}, and has overall $O(N\log N+K^2SG)$ time, $O(N+KS+SG)$ memory complexity (Wasikowski algorithm in Table~\ref{tab:complexity}).
 
 \begin{table*}[ht]
   \centering
@@ -274,7 +274,7 @@ RSS 1 & \textcolor{red}{48} & 64 & \textcolor{red}{168}\textcolor{white}{.0} & 1
    \hline
 \end{tabular}
 \caption{
-  \label{tab:counts}
+  \label{tab:results}
   Typical results, $K=4$ fold cross-validation on four real data sets with groups and stratification.
   Columns ``rows in'' show number of rows in each fold and stratum (s1 = stratum 1, etc).
   Counts closer to ideal are better (\textcolor{red}{red numbers} highlight slight differences between algorithms).
@@ -301,7 +301,7 @@ n^*_\sigma = \sum_{i\in\{1,\dots,N\}}
 I[s_i = \sigma]/K,
 \end{equation}
 where $I[\cdot]$ is the indicator function (1 if argument is true, 0 otherwise).
-Table~\ref{tab:counts} (ideal row) shows $n^*_\sigma$ values for $K=4$ fold cross-validation in four real data sets.
+Table~\ref{tab:results} (row ``ideal per fold'') shows $n^*_\sigma$ values for $K=4$ fold cross-validation in four real data sets.
 
 The proposed Sort() sub-routine sorts groups by RSS (increasing).
 To compute the RSS for each group, we first compute $c_1,\dots,c_S $, the counts of rows in each stratum for the current group, \texttt{count(group)} in the pseudo-code.
@@ -313,7 +313,7 @@ $
 $
 %\end{equation}
 If there are two groups with the same RSS value, we break ties by sorting using the number of rows in that group (decreasing),
-$
+$\text{Nrow}=
 \sum_{\sigma\in\{1,\dots,S\}}
 c_{\sigma},
 $
@@ -335,6 +335,7 @@ We propose to find a fold assignment which minimizes the residual sum of squares
 \sum_{\sigma\in\{1,\dots,S\}}
 \sum_{\phi\in\{1,\dots,K\}}
 (\hat n_{\sigma,\phi} - n^*_\sigma)^2.
+\label{eq:RSS}
 \end{equation}
 
 \begin{table*}[t]
@@ -382,14 +383,13 @@ We propose to find a fold assignment which minimizes the residual sum of squares
 \end{table*}
 
 The algorithm starts with all $\hat n_{\sigma,\phi}=0$ and then assigns a fold to one group at a time.
-We propose assign the group to the fold that minimizes the RSS after assignment,
+We propose assigning the group to the fold that minimizes the RSS after assignment,
 \begin{equation}
 \min_{k\in\{1,\dots,K\}}
 \sum_{\sigma\in\{1,\dots,S\}}
 \sum_{\phi\in\{1,\dots,K\}}
 \big(
 (\hat n_{\sigma,\phi}+c_\sigma I[\phi=k]) - n^*_\sigma\big)^2.
-\label{eq:RSS} 
 \end{equation}
 Expanding the square and simplifying yields
 \begin{eqnarray}
@@ -485,20 +485,20 @@ To justify our new algorithm, we propose synthetic data sets to use as test case
 % The proposed algo results in better fold assignments for these simple examples.
 
 We propose the following synthetic test case to show the advantage of the proposed algorithm (sort groups by RSS increasing), relative to the previous Wasikowski algorithm (sort by variance decreasing).
-Consider a data set with $S=2$ strata, $G=5$ groups, $N=12$ data, and $K=3$ fold cross-validation (Table~\ref{tab:rss-var}).
+Consider the following data set with $S=2$ strata, $G=5$ groups, $N=12$ data, and $K=3$ fold cross-validation (Table~\ref{tab:rss-var}).
+We use the notation $[c_1,c_2]$ for $c_1$ rows in stratum 1, and $c_2$ rows in stratum 2.
 Consistent with the ``pack larger bins first'' heuristic, the proposed algorithm sorts the five groups in the order [1,3], [1,2], [0,2], [1,1], [0,1].
-The previous Wasikowski sorts in an order that is not consistent with the number of rows: [1,2] and [0,1] both have variance 0.5, so are assigned folds before [1,1] (zero variance).
+The previous Wasikowski algorithm sorts in an order that is not consistent with the number of rows: [1,2] and [0,1] both have variance 0.5, so are assigned folds before [1,1] (zero variance).
 For these data, the proposed RSS minimization always obtains ideal counts per fold, [1,3] (Table~\ref{tab:rss-var}, left).
 In contrast, the previous method can result in sub-optimal counts: [1,4],[1,3],[1,2] (Table~\ref{tab:rss-var}, right).
 
 \subsection{Test case to justify tie-breaking}
 
-In this section we propose an synthetic data set where the tie-breaking rules (Section~\ref{sec:proposed-sort}) are necessary for optimal fold assignment.
+We propose the following synthetic data set where the tie-breaking rules (Section~\ref{sec:proposed-sort}) are necessary for optimal fold assignment.
 It involves $N=22$ data with $G=6$ groups, $S=2$ strata, and $K=2$ folds (Table~\ref{tab:ties}).
-We use the notation $[c_1,c_2]$ for $c_1$ rows in stratum 1, and $c_2$ rows in stratum 2.
 The groups are [1,1], [3,0],  [5,3], and three groups with the counts [1,2].
 The total is [12,10], so the ideal is $n^*=[6,5]$ per fold.
-The groups [3,0] and [1,2] are tied for the first two sorting criteria: RSS=34 and 3 data.
+The groups [3,0] and [1,2] are tied for the first two sorting criteria: RSS=34 and Nrow=3.
 To third level of tie-breaking should prefer the group [3,0] which has more rows than [1,2] in the larger first stratum.
 Our proposed third criterion is the weighted sum,
 $\text{Wsum}=
@@ -571,14 +571,14 @@ We also ran three packages in R \citep{R2026} with functions for computing fold 
 
 \subsection{Accuracy of fold assignment}
 
-In order to compare fold assignment accuracy, we ran all six algorithms on all four data sets, using cross-validation with $K\in\{2,4,8\}$ folds, and ten random seeds.
+To compare fold assignment accuracy, we ran all six algorithms on all four data sets, using $K\in\{2,4,8\}$ folds, and ten random seeds which control final tie-breaking in the sort step.
 We expected the proposed algorithm to create near ideal fold assignments, similar to the previous heuristic.
-For $K=4$ folds and one random seed, Table~\ref{tab:counts} shows the counts obtained using four methods (ideal, proposed RSS, previous Wasikowski, random baseline).
+For $K=4$ folds and one random seed, Table~\ref{tab:results} shows the counts obtained using four methods (ideal, proposed RSS, previous Wasikowski, random baseline).
 In agreement with our expectations, these results show that the proposed algorithm yields fold assignments with nearly ideal counts in all data sets, similar to the previous Wasikowski heuristic (both much better than random).
+The only exception was in AZtrees data, for which any algorithm fails, due to one large group with 1478 rows (assigned to a single fold to avoid data leakage, resulting in counts much larger than ideal).
 
 For each run, we also computed and plotted the root mean squared error between the ideal and actual counts per fold/stratum (Figure~\ref{fig:several_Tasks}).
 In agreement with our expectations, we observed that proposed RSS and previous Wasikowski had comparably small error rates (sometimes one or the other slightly better, almost always much smaller error rates than random).
-The only exception was in AZtrees data with $K\in\{4,8\}$ folds, for which it is impossible to do much better than random, due to one large group with 1478 rows (assigned to a single fold to avoid data leakage, resulting in counts much larger than ideal).
 The origami and rsample R packages require one stratum per group, so only run in the AZtrees data, but gave error rates similar to random (with data leakage for origami).
 The bioLeak package ran in all data, but almost always yielded error rates much larger than the proposed RSS and previous Wasikowski algorithms.
 Overall, these results indicate that the proposed RSS algorithm provides state-of-the-art fold assignment accuracy for a variety of real data sets with groups and strata.
@@ -594,11 +594,11 @@ Overall, these empirical timings suggest that the proposed RSS algorithm is much
 \section{Conclusions}
 
 In structured data sets with groups and strata, cross-validation fold assignment is NP-hard.
-We proposed a new greedy algorithm based on RSS minimization, that is asymptotically faster than the previous Wasikowski algorithm in scikit-learn.
+We proposed a new greedy algorithm that has asymptotically less time and memory usage than the previous Wasikowski algorithm in scikit-learn.
 Our empirical results on synthetic and real data showed that our proposed algorithm is at least as accurate, and much faster, than the previous Wasikowski algorithm.
 Future work could consider 
-other loss functions like a max difference \citet{Pop2013},
-or new applications such as imbalanced subset generation.
+other loss functions like a max difference \citep{Pop2013},
+or adapting our algorithm for new applications such as imbalanced subset generation.
 
 \subsection*{AI use statement}
 
