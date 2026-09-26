@@ -437,8 +437,8 @@ The overall complexity of the proposed RSS minimization algorithm is therefore $
     \includegraphics[width=0.9\linewidth]{several_Tasks_even.png}
       \vskip -0.5cm
     \caption{
-      Results of cross-validation fold assignment using six algorithms on four real data sets.
-      Each algorithm was run using 10 different random seeds on each data set (randomness used to tie-break in sort step).
+      Fold assignment error using six algorithms on four real data sets.
+      Each dot shows one of 10 random seeds, with randomness used to tie-break in sort step.
       Ideal results have small RMSE values (indicating good agreement with ideal strata counts per fold), and black rather than red dots (indicating no data leakage).
     }
     \label{fig:several_Tasks}
@@ -574,10 +574,10 @@ We also ran three packages in R \citep{R2026} with functions for computing fold 
 To compare fold assignment accuracy, we ran all six algorithms on all four data sets, using $K\in\{2,4,8\}$ folds, and ten random seeds which control final tie-breaking in the sort step.
 We expected the proposed algorithm to create near ideal fold assignments, similar to the previous heuristic.
 For $K=4$ folds and one random seed, Table~\ref{tab:results} shows the counts obtained using four methods (ideal, proposed RSS, previous Wasikowski, random baseline).
-In agreement with our expectations, these results show that the proposed algorithm yields fold assignments with nearly ideal counts in all data sets, similar to the previous Wasikowski heuristic (both much better than random).
-The only exception was in AZtrees data, for which any algorithm fails, due to one large group with 1478 rows (assigned to a single fold to avoid data leakage, resulting in counts much larger than ideal).
+In agreement with our expectations, these results show that the proposed algorithm almost always yields fold assignments with nearly ideal counts, similar to the previous Wasikowski heuristic (both much better than random).
+The only exception was in AZtrees data, for which any algorithm with $K\geq 4$ folds can not get close to ideal, due to one large group with 1478 rows (however our algorithm works in these data with only $K=3$ folds, Table~\ref{tab:counts} case E; and it works with $K=2$ folds, Figure~\ref{fig:several_Tasks}).
 
-For each run, we also computed and plotted the root mean squared error between the ideal and actual counts per fold/stratum (Figure~\ref{fig:several_Tasks}).
+We also computed the root mean squared error between the ideal and actual counts per fold/stratum (Figure~\ref{fig:several_Tasks}).
 In agreement with our expectations, we observed that proposed RSS and previous Wasikowski had comparably small error rates (sometimes one or the other slightly better, almost always much smaller error rates than random).
 The origami and rsample R packages require one stratum per group, so only run in the AZtrees data, but gave error rates similar to random (with data leakage for origami).
 The bioLeak package ran in all data, but almost always yielded error rates much larger than the proposed RSS and previous Wasikowski algorithms.
