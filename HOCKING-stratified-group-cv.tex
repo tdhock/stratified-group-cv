@@ -225,12 +225,12 @@ The previous Wasikowski algorithm, and our proposed algorithms, are all greedy h
 \begin{verbatim}
 def assign_folds(strata, groups, N_folds):
   count_matrix = zeros(N_strata, N_folds)
-  folds = {}
+  assignment = {}
   for group in Sort(groups):
     best_fold = get_best_fold(group)
-    folds[group] = best_fold
+    assignment[group] = best_fold
     count_matrix[,best_fold] += count(group)
-  return folds
+  return assignment
 \end{verbatim}
 This is a novel abstract characterization of the previous algorithm (Contribution~1), which facilitates understanding and improving its computational complexity.
 The algorithm inputs $N$-vectors \texttt{strata} ($S$ unique values) and \texttt{groups} ($G$ unique values), as well as \texttt{N\_folds} (integer, $K$).
@@ -516,7 +516,7 @@ All results were computed on a 2025 laptop (Intel Core Ultra 5 125U CPU).
 
 \subsection{Data sets}
 
-We chose four data sets in order to represent a variety of different application areas of machine learning, over several orders of magnitude of size, from $N=444$ to $N=248,485$ rows.
+We chose four data sets that represent a variety of machine learning applications, over several orders of magnitude of size, from $N=444$ to 248,485 rows, $G=111$ to 123,646 groups, $S=2$ to 5 strata (Figure~\ref{fig:several_Tasks}).
 
 We considered two medical data sets in which groups are patients and rows are medical visits, so grouped cross-validation is important to ensure accurate estimation of prediction error on new patients.
 The \textbf{respiratory} data have $N=444$ rows and $G=111$ groups for respiratory illness prediction, from the geepack package in R \citep{Halekoh2006}.
@@ -536,7 +536,7 @@ There are $S=5$ strata/labels: categories of adoption speed.
 We compared the proposed RSS algorithm to five others.
 First, the random baseline is the trivial algorithm which assigns each group to a random fold (no leakage, but high error rate, case C in Figure~\ref{tab:counts}).
 Second, we ran the previous Wasikowski algorithm, which has a Python/numpy implementation in scikit-learn \citep{sklearn2011}.
-We re-implemented this algorithm in C++ for a more controlled comparison with our proposed C++ code for RSS minimization.
+We re-implemented this algorithm in C++ for more controlled timing comparisons with our proposed C++ code for RSS minimization.
 We also ran three packages in R \citep{R2026} with functions for computing fold assignment using stratification and groups: 
 \texttt{bioLeak} version 0.3.8 \citep{bioLeak2026}, \texttt{rsample} version 1.3.2 \citep{rsample2026}, \texttt{origami} version 1.0.8 \citep{Coyle2018,origami2026}.
 % \verb|bioLeak::make_split_plan|
