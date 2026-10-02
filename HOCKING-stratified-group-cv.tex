@@ -156,9 +156,8 @@ With stratification, the proposed heuristic gave an ideal result: 1985--1986 row
 Our proposed heuristic is inspired by previous work by a Kaggle competitor, who proposed a different heuristic algorithm, based on minimizing the variance between row counts in each fold \citep{Wasikowski2019}.
 We refer to this previous algorithm as the Wasikowski heuristic, which is used in the StratifiedGroupKFold class, available in scikit-learn since version 1.0 \citep{pr18649,whatsnew}.
 However, close inspection of the Wasikowski heuristic reveals that it is relatively inefficient, $O(K^2 SG)$ time and $O(SG)$ memory for $K$ folds, $G$ groups, and $S$ strata (Table~\ref{tab:complexity}).
-The quadratic time complexity can be prohibitive for a large number of folds $K$, and the memory complexity can be prohibitive if both $S$ and $G$ are large.
+The quadratic time is too slow for large numbers of folds $K$, which are often used in spatial data \citep{ploton2020}, and the memory complexity can be prohibitive if both $S$ and $G$ are large, for example in large language models \citep{yang2024}, and other data with many classes like ImageNet \citep{imagenet}.
 This paper proposes new heuristic algorithms with reduced asymptotic time and memory complexity (Table~\ref{tab:complexity}).
-
 
 \subsection{Contributions}
 
