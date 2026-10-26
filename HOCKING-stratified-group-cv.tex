@@ -68,7 +68,8 @@ E)&yes strata&Positive &  \textbf{225} & \textbf{224} & \textbf{225} &  39 &  39
 \caption{
   \label{tab:counts}
   Demonstration of trivial and proposed algorithms for five cases of $K=3$ fold cross-validation in AZtrees data, with $N=5956$ rows, $G=189$ groups, and $S=2$ strata (same as binary label $y$).
-  The proposed algorithm with stratification and groups (case E) gives nearly equal data counts across folds (\textbf{bold}), and no leakage (empty entries in the right columns, meaning zero groups assigned to multiple folds).
+  A missing/empty table cell indicates group count=0.
+  The proposed algorithm with stratification and groups (case E) gives nearly equal data counts across folds (\textbf{bold}), and no leakage (zero groups in multiple folds).
 }
 \end{table*}
 
@@ -76,24 +77,23 @@ Many types of modern artificially intelligent systems are powered by machine lea
 $K$-fold cross-validation \citep{Arl_Cel:2010:surveyCV,raschka2020modelevaluationmodelselection} is a fundamental data-splitting technique that is used for both training (tuning hyper-parameters of a learning algorithm) and evaluation (comparing prediction accuracy of different learning algorithms).
 In a data set of $N$ observations (rows of tabular data), $K$-fold cross-validation involves assigning a fold ID (integer between 1 and $K$) to each of the $N$ rows.
 For each fold ID from 1 to $K$, the corresponding rows form a test set, and the other rows form a train set (for the case of evaluation).
-Learning algorithms are fit to each train set, then prediction error rates are computed on the corresponding test set.
-The resulting $K$ measurements of prediction error on the test sets are used to estimate how the learning algorithm would perform on new data from the same distribution.
+Learning algorithms are fit to each train set, the resulting $K$ test error values are used to estimate how the learning algorithm would perform on new data.
 
 
-\subsection{Issues with unstructured cross-validation in structured data}
+\subsection{Issues with unstructured cross-validation}
 
 This paper proposes a new algorithm for cross-validation in machine learning data sets with two kinds of structure: groups and strata.
 Groups are rows that should stay together when splitting, to avoid data leakage, which can cause over-optimistic estimates of prediction error rates  \citep{kaufman2012leakage,kapoor2023leakage}.
 Examples of groups include medical records for the same patient (in diagnostic/prognostic prediction problems), and pixels labeled from the same polygon (in image segmentation problems).
 Strata are classes of rows for which the relative proportions should be preserved when splitting.
 Examples of strata include the output label in classification problems, such as medical diagnosis or image segmentation \citep{russell2008labelme, asif2025advancements}.
-To understand why our proposed algorithm is useful, we first discuss the issues that arise when unstructured cross-validation is used in structured data.
+To understand why our proposed algorithm is useful, we first discuss issues with unstructured cross-validation in structured data.
 
 \subsubsection{
   % Cross-validation with neither
   Neither stratification nor groups}
 
-Because the goal of data-splitting is to estimate prediction error in the same distributional setting as the original data set, it is important for the splitting procedure to generate train/test sets which are representative of the original data.
+Because the goal of data-splitting is to estimate prediction error in the same distributional setting as the original data set, it is important for the splits to be representative of the original data.
 In an unstructured data set, we would at least like to ensure that each test set has the same number of rows.
 For example, consider the AZtrees data \citep{Hocking2026soak}, which represent an image segmentation problem.
 There are $N=5956$ rows, each representing a pixel in an image that has been labeled as containing a tree (positive class) or not (background negative class), so in $K=3$ fold cross-validation, we expect each fold to have approximately $N/K=1985.33$ rows.
@@ -108,7 +108,7 @@ For the AZtrees example, this results in 1985--1986 rows per fold (Table~\ref{ta
     \hline
     Wasikowski (previous, scikit-learn) & $O(N\log N + K^2SG)$ & $O(N + KS + SG)$\\
     Wasikowski-L (proposed) & $O(N\log N + K^2SG)$ & $O(N + KS)$\\
-        RSS (proposed) & $O(N\log N + KSG)$  & $O(N + KS)$
+        Residual Sum of Squares (RSS, proposed) & $O(N\log N + KSG)$  & $O(N + KS)$
     \end{tabular}
     \caption{Proposed algorithms have reduced asymptotic time and memory complexity for computing $K$-fold cross-validation assignment, given $N$ data rows in $S$ strata and $G$ groups.}
     \label{tab:complexity}
@@ -129,9 +129,9 @@ For the AZtrees example, stratification results in 1760--1761 negative rows per 
   Groups but no stratification}
 
 In a structured data set with a grouping variable, the data-splitting technique should work on groups instead of rows, to avoid data leakage \citep{kaufman2012leakage,kapoor2023leakage}.
-For example, the AZtrees data were created by drawing polygons on a map in Quantum GIS software \citep{QGIS_software}.
-Each polygon represents an area of the map labeled as positive or negative, and all pixels in the polygon are assigned the corresponding class label.
-We would like to avoid generating a split with some pixels of a polygon assigned to the train set, and other pixels from that polygon assigned to the test set (data leakage), which would result in over-optimistic estimates of test error rates.
+For example, medical data are often grouped by patients, who may have a different stratum/class label for each visit/row.
+Another example is image segmentation (AZtrees data, Table~\ref{tab:counts}), where groups are polygons, and all pixels/rows in the polygon/group are assigned the corresponding class label.
+We would like to avoid generating a split with some rows of a group assigned to the train set, and other rows from that group assigned to the test set (data leakage), which would result in over-optimistic estimates of test error rates.
 In the AZtrees data, cross-validation without grouping by polygon results in data leakage: some groups are randomly assigned to multiple folds (Table~\ref{tab:counts} Cases A and B, 1--104 groups in multiple folds).
 
 To modify cross-validation for a data set with $G$ groups, we repeat the fold values ($1, \dots, K, 1, \dots, K, \dots$), to obtain a $G$-vector, which is randomly shuffled to assign each group to a fold.
@@ -153,10 +153,12 @@ This paper proposes a new heuristic algorithm which performs greedy minimization
 In the AZtrees data, one random run of the proposed heuristic without stratification gave 1985--1986 rows per fold, 1723--1803 negative labels per fold, 183--262 positive labels per fold, and no data leakage (Table~\ref{tab:counts} Case D).
 With stratification, the proposed heuristic gave an ideal result: 1985--1986 rows per fold, 1760--1761 negative labels per fold, 224--225 positive labels per fold, and no data leakage (Table~\ref{tab:counts} Case E).
 
-Our proposed heuristic is inspired by previous work by a Kaggle competitor, who proposed a different heuristic algorithm, based on minimizing the variance between row counts in each fold \citep{Wasikowski2019}.
+Our proposed heuristic is inspired by a Kaggle competitor’s algorithm for minimizing variance between row counts in each fold \citep{Wasikowski2019}.
 We refer to this previous algorithm as the Wasikowski heuristic, which is used in the StratifiedGroupKFold class, available in scikit-learn since version 1.0 \citep{pr18649,whatsnew}.
-However, close inspection of the Wasikowski heuristic reveals that it is relatively inefficient, $O(K^2 SG)$ time and $O(SG)$ memory for $K$ folds, $G$ groups, and $S$ strata (Table~\ref{tab:complexity}).
-The quadratic time is too slow for large numbers of folds $K$, which are often used in spatial data \citep{ploton2020}, and the memory complexity can be prohibitive if both $S$ and $G$ are large, for example in large language models \citep{yang2024}, and other data with many classes like ImageNet \citep{imagenet}.
+However, the Wasikowski heuristic is relatively inefficient (Table~\ref{tab:complexity}).
+For $K$ folds, $G$ groups, and $S$ strata, it has a $O(K^2 SG)$ term in time complexity, and a $O(SG)$ term in memory complexity.
+The quadratic time is too slow for large numbers of folds, which are useful when comparing with blocked CV in spatial data \citep{ploton2020} ($K\approx 100$ spatial blocks).
+The memory complexity can be prohibitive if both $S$ and $G$ are large, for example in large language models \citep{yang2024} ($S\approx 10^4$ tokens, $G\approx 10^6$ documents), and other data with many classes like ImageNet \citep{imagenet}.
 This paper proposes new heuristic algorithms with reduced asymptotic time and memory complexity (Table~\ref{tab:complexity}).
 
 \subsection{Contributions}
@@ -164,7 +166,7 @@ This paper proposes new heuristic algorithms with reduced asymptotic time and me
 This paper presents five new research contributions related to cross-validation with groups and strata.
 After reviewing related research (Section~\ref{sec:related}), we present a new abstract characterization of the previous Wasikowski algorithm, which allows understanding and improving three sub-routines (Contribution~1, Section~\ref{sec:pseudo-code}).
 Next, we propose a new online counting algorithm, with asymptotically less memory usage (Contribution~2, Section~\ref{sec:online}), which permits new applications to data sets with large numbers of strata and groups.
-We propose a new RSS minimization algorithm which is asymptotically faster than the previous Wasikowski algorithm (Contribution~3, Section~\ref{sec:RSS-algo}).
+We propose a new Residual Sum of Squares (RSS) minimization algorithm which is asymptotically faster than the previous Wasikowski algorithm (Contribution~3, Section~\ref{sec:RSS-algo}).
 To demonstrate the advantages of our new algorithm, we propose synthetic data sets to use as test cases (Contribution~4, Section~\ref{sec:synthetic-tests}).
 Finally, we present systematic empirical comparisons with 5 baselines, in terms of fold assignment accuracy and computation time in four real data sets (Contribution~5, Section~\ref{sec:results}).
 
@@ -173,14 +175,12 @@ Finally, we present systematic empirical comparisons with 5 baselines, in terms 
 
 A typical application of stratification is in classification problems, where the stratum variable is defined as the label/output variable to predict.
 Other examples of stratification variables are domain/subset, when evaluating domain adaptation algorithms, and when estimating similarity of data subsets for learning purposes \citep{Hocking2026soak}.
-
 Assigning groups of data to cross-validation folds is similar to the bin packing problem, which is NP-hard, but with fast heursitic algorithms that have reasonable approximation error bounds \citep{Johnson2016}.
 Two classic algorithms are ``first fit decreasing'' and ``best fit decreasing,'' both of which sort the list of objects by size, and have asymptotic worst case ratios of 11/9 (amount of more bins used than necessary).
 Whereas bin packing has a variable number of bins used for $N$ items, cross-validation has a fixed number of $K$ bins, so is a different NP-hard problem: multiway number partitioning, which has been called the ``easiest hard problem'' \citep{hayes2002computing}.
-%With more than one stratum, this 
+Cross-validation fold assignment is an instance of multiway number partitioning in which each fold is a bin, and each group is represented by a multi-dimensional size vector (one element per stratum).
 Simple heuristics for this problem are similar to bin packing: sort by size and then use greedy assignment to the emptiest bin.
 Other heuristics for this problem include genetic algorithms and local search \citet{Pop2013}, which are too complex for the cross-validation fold assignment problem.
-
 We provide empirical comparisons with previous algorithms and software for cross-validation fold assignment in scikit-learn \citep{sklearn2011}, \texttt{bioLeak} \citep{bioLeak2026}, \texttt{rsample} \citep{rsample2026}, and \texttt{origami} \citep{Coyle2018,origami2026}.
 
 
@@ -242,7 +242,7 @@ For each group, the \texttt{get\_best\_fold()} sub-routine determines the fold a
 The previous Wasikowski algorithm uses the following choices for the sub-routines in the pseudo-code.
 The \texttt{Sort()} sub-routine uses the variance of the strata counts (max variance assigned first), which has some drawbacks that are discussed in Section~\ref{sec:synthetic-tests}.
 The $O(K^2 S)$ time \texttt{get\_best\_fold()} sub-routine loops over possible folds, adding the current group’s strata counts to current fold’s column of \texttt{count\_matrix}, which is then summarized by computing standard deviation (SD) over folds for each stratum, and finally mean of the SD values over strata.
-The \texttt{count(group)} sub-routine involves computing a matrix of counts for each stratum and group, which takes $O(SG)$ memory.
+The \texttt{count(group)} sub-routine involves checking a matrix of counts for each stratum and group, which takes $O(SG)$ memory.
 This algorithm is implemented in scikit-learn \citep{sklearn2011}, and has overall $O(N\log N+K^2SG)$ time, $O(N+KS+SG)$ memory complexity (Wasikowski algorithm in Table~\ref{tab:complexity}).
 
 \begin{table*}[ht]
@@ -283,7 +283,7 @@ RSS 1 & \textcolor{red}{48} & 64 & \textcolor{red}{168}\textcolor{white}{.0} & 1
 
 \subsection{Proposed online counting algorithm for reduced memory complexity}
 \label{sec:online}
-The previous algorithm’s $O(SG)$ memory complexity can be prohibitive if there are a large number of strata and groups.
+The previous algorithm’s $O(SG)$ term in memory complexity can be prohibitive if there are a large number of strata and groups.
 We propose to sort all data rows by group, so the for loop over groups becomes a for loop over data rows, and the \texttt{count(group)} sub-routine computes a vector of strata counts for the current group (no need for a matrix of counts for every group and stratum).
 This proposed online counting algorithm can be used with the previous heuristic (Wasikowski-L in Table~\ref{tab:complexity}), and with our proposed squared error minimization heuristic (RSS in Table~\ref{tab:complexity}).
 Both are the first such algorithms with no $O(SG)$ term in memory complexity (Contribution~2), which permits new applications of these algorithms to data with a large number of strata and groups.
@@ -346,7 +346,7 @@ We propose to find a fold assignment which minimizes the residual sum of squares
     iteration&in group&  fold&   RSS& fold1& fold2& fold3&in group&  fold&   Var& fold1& fold2& fold3\\
     \hline
 1&    1,3&     1&     0&   1,3&&&0,2&     1&   2.0&   0,2&&\\
-2&    1,2&     2&     1&   1,3&&   1,2&1,3&     2&   2.0&   0,2&   1,3&\\
+2&    1,2&     2&     1&   1,3&   1,2&&1,3&     2&   2.0&   0,2&   1,3&\\
 3&    0,2&     3&     2&   1,3&   1,2&   0,2&1,2&     3&   0.5&   0,2&   1,3&   1,2\\
 4&    1,1&     3&     4&   1,3&   1,2&   1,3&0,1&     1&   0.5&   0,3&   1,3&   1,2\\
 5&    0,1&     2&     5&   1,3&   1,3&   1,3&1,1&     1&   0.0&   1,4&   1,3&   1,2
@@ -354,7 +354,7 @@ We propose to find a fold assignment which minimizes the residual sum of squares
   \caption{
     Demonstration of proposed algorithm with $N=12$ rows, $G=5$ groups, $S=2$ strata, and $K=3$ folds.
     Counts columns show numbers of rows per stratum, for example 1,3 means 1 row in first stratum and 3 rows in second stratum.
-    The proposed greedy RSS minimization works to compute an ideal fold assignment (\textbf{left}, total counts 1,3 in each fold), but previous variance minimization does not (\textbf{right}).}
+    The proposed greedy RSS minimization works to compute an ideal fold assignment (\textbf{left}, total counts 1,3 in each fold), but previous variance minimization does not (\textbf{right}, 2--4 counts in second stratum).}
   \label{tab:rss-var}
 \end{table*}
 \begin{table*}[t]
@@ -536,8 +536,9 @@ We compared the proposed RSS algorithm to five others.
 First, the random baseline is the trivial algorithm which assigns each group to a random fold (no leakage, but high error rate, case C in Figure~\ref{tab:counts}).
 Second, we ran the previous Wasikowski algorithm, which has a Python/numpy implementation in scikit-learn \citep{sklearn2011}.
 We re-implemented this algorithm in C++ for more controlled timing comparisons with our proposed C++ code for RSS minimization.
-We also ran three packages in R \citep{R2026} with functions for computing fold assignment using stratification and groups: 
+We also ran three packages in R \citep{R2026} with functions for computing fold assignment using stratification and groups (not re-implemented in C++ because they were not competitive in terms of accuracy): 
 \texttt{bioLeak} version 0.3.8 \citep{bioLeak2026}, \texttt{rsample} version 1.3.2 \citep{rsample2026}, \texttt{origami} version 1.0.8 \citep{Coyle2018,origami2026}.
+%We did not compare with baseline algorithms for multiway number partitioning because those heuristics are too slow for the simple cross-validation fold assignment problem.
 % \verb|bioLeak::make_split_plan|
 % stratify: logical, keep outcome proportions similar across folds. For
 %           grouped modes, stratification is applied at the group level
@@ -595,6 +596,7 @@ Overall, these empirical timings suggest that the proposed RSS algorithm is much
 In structured data sets with groups and strata, cross-validation fold assignment is NP-hard.
 We proposed a new greedy algorithm that has asymptotically less time and memory usage than the previous Wasikowski algorithm in scikit-learn.
 Our empirical results on synthetic and real data showed that our proposed algorithm is at least as accurate, and much faster, than the previous Wasikowski algorithm.
+%This faster computation time is especially useful in data with a large number of folds, for example in spatial data (large number of geographical folds/blocks).
 Future work could consider 
 other loss functions like a max difference \citep{Pop2013},
 or adapting our algorithm for new applications such as imbalanced subset generation.

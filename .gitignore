@@ -5,3 +5,7 @@
 *.aux
 *.log
 /.Rhistory
+*.bbl
+*.blg
+*.out
+_region_.tex
