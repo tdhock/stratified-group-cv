@@ -1,4 +1,6 @@
-** Slides for presentation
+** Paper, slides, abstract
+
+Paper draft [[file:HOCKING-stratified-group-cv.pdf][PDF]], [[file:HOCKING-stratified-group-cv.tex][tex source]].
 
 [[https://docs.google.com/presentation/d/1gXEqaPQBdJxA39iLqy6SlpA1LZGHcOOgJ1dT1_lzVlo/edit?usp=sharing][Google slides]]
 
@@ -11,7 +13,7 @@ Abstract:
   Fold assignment is trivial with either stratification or grouping, but it is NP-hard with both stratification and grouping.
   Scikit-learn implements a heuristic that obtains reasonable fold assignments in this case, but its time and memory complexity can be prohibitive for large data.
   We propose a new heuristic algorithm with asymptotically less time and memory usage, that can be used on large data sets.
-  In an empirical analysis of four real data sets, the proposed algorithm provides comparable fold assignments, and is at least ten times faster than the previous algorithm.
+  In an empirical analysis of four real data sets, the proposed algorithm provides comparable fold assignments, and is asymptotically about ten times faster than the previous algorithm.
 
 ** 20 Sept 2026
 
