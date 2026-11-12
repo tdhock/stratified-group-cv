@@ -77,7 +77,7 @@ Many types of modern artificially intelligent systems are powered by machine lea
 $K$-fold cross-validation \citep{Arl_Cel:2010:surveyCV,raschka2020modelevaluationmodelselection} is a fundamental data-splitting technique that is used for both training (tuning hyper-parameters of a learning algorithm) and evaluation (comparing prediction accuracy of different learning algorithms).
 In a data set of $N$ observations (rows of tabular data), $K$-fold cross-validation involves assigning a fold ID (integer between 1 and $K$) to each of the $N$ rows.
 For each fold ID from 1 to $K$, the corresponding rows form a test set, and the other rows form a train set (for the case of evaluation).
-Learning algorithms are fit to each train set, the resulting $K$ test error values are used to estimate how the learning algorithm would perform on new data.
+Learning algorithms are fit to each train set, and the resulting $K$ test error values are used to estimate how the learning algorithm would perform on new data.
 
 
 \subsection{Issues with unstructured cross-validation}
